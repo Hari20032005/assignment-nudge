@@ -40,7 +40,7 @@ const Index = () => {
             <div className="mt-8 text-sm text-muted-foreground max-w-md text-center">
               <p>
                 Simply paste your assignment table and we'll automatically organize and track your due dates.
-                Set reminders to be added directly to your Google Calendar.
+                Click "Add to Google Calendar" to add reminders for your assignments with due dates.
               </p>
             </div>
           </div>

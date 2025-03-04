@@ -61,8 +61,7 @@ export class NotificationService {
         action: 'TEMPLATE',
         text: title,
         details: description,
-        dates: `${startIso}/${endIso}`,
-        add: 'calendars@group.v.calendar.google.com' // Adds to user's primary calendar
+        dates: `${startIso}/${endIso}`
       };
 
       // Construct the Google Calendar URL

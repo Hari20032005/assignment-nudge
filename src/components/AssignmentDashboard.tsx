@@ -53,11 +53,11 @@ export function AssignmentDashboard({ assignments: initialAssignments, onReset }
 
   const setReminders = () => {
     try {
-      // Get upcoming assignments for reminders
-      const upcomingAssignments = assignments.filter(a => a.daysLeft !== null && a.daysLeft >= 0 && a.daysLeft <= 7);
+      // Get assignments with due dates
+      const assignmentsWithDueDates = assignments.filter(a => a.dueDate !== null);
       
-      if (upcomingAssignments.length === 0) {
-        toast.info("No upcoming assignments to set reminders for");
+      if (assignmentsWithDueDates.length === 0) {
+        toast.info("No assignments with due dates to set reminders for");
         return;
       }
       
@@ -65,32 +65,29 @@ export function AssignmentDashboard({ assignments: initialAssignments, onReset }
       let addedCount = 0;
       
       // Process each assignment
-      upcomingAssignments.forEach(assignment => {
+      assignmentsWithDueDates.forEach(assignment => {
         if (assignment.dueDate) {
           // Set start time to 1 day before due date at 9 AM
           const startDate = new Date(assignment.dueDate);
           startDate.setDate(startDate.getDate() - 1);
           startDate.setHours(9, 0, 0, 0);
           
-          // Only add if start date is in the future
-          if (startDate > new Date()) {
-            // Set end time 1 hour after start
-            const endDate = new Date(startDate);
-            endDate.setHours(endDate.getHours() + 1);
-            
-            // Create description with assignment details
-            const description = `Assignment Due: ${formatDate(assignment.dueDate)}\nCourse: ${assignment.courseCode} - ${assignment.courseTitle}\nFaculty: ${assignment.facultyName}`;
-            
-            // Add to Google Calendar
-            const success = NotificationService.createGoogleCalendarEvent(
-              `Assignment Reminder: ${assignment.courseTitle}`,
-              description,
-              startDate,
-              endDate
-            );
-            
-            if (success) addedCount++;
-          }
+          // Set end time 1 hour after start
+          const endDate = new Date(startDate);
+          endDate.setHours(endDate.getHours() + 1);
+          
+          // Create description with assignment details
+          const description = `Assignment Due: ${formatDate(assignment.dueDate)}\nCourse: ${assignment.courseCode} - ${assignment.courseTitle}\nFaculty: ${assignment.facultyName || 'Not specified'}`;
+          
+          // Add to Google Calendar
+          const success = NotificationService.createGoogleCalendarEvent(
+            `Assignment Reminder: ${assignment.courseTitle}`,
+            description,
+            startDate,
+            endDate
+          );
+          
+          if (success) addedCount++;
         }
       });
       
