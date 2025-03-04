@@ -31,7 +31,7 @@ const Index = () => {
             <div className="max-w-lg text-center mb-10">
               <h1 className="text-3xl font-bold mb-4 tracking-tight">Never Miss a Deadline</h1>
               <p className="text-muted-foreground">
-                Paste your assignment data below and we'll help you stay on top of your deadlines.
+                Paste your assignment data below and we'll help you stay on top of your deadlines with Google Calendar integration.
               </p>
             </div>
             
@@ -40,6 +40,7 @@ const Index = () => {
             <div className="mt-8 text-sm text-muted-foreground max-w-md text-center">
               <p>
                 Simply paste your assignment table and we'll automatically organize and track your due dates.
+                Set reminders to be added directly to your Google Calendar.
               </p>
             </div>
           </div>

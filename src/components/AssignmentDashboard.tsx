@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Assignment } from '@/lib/types';
 import { AssignmentCard } from './AssignmentCard';
@@ -52,69 +51,61 @@ export function AssignmentDashboard({ assignments: initialAssignments, onReset }
     toast.success(`Added ${newAssignments.length} new assignments`);
   };
 
-  const setReminders = async () => {
+  const setReminders = () => {
     try {
-      // Check if we're on a mobile platform with notification support
-      if (NotificationService.isAvailable()) {
-        // Request permissions if needed
-        const hasPermission = await NotificationService.checkPermissions();
-        if (!hasPermission) {
-          const permissionGranted = await NotificationService.requestPermissions();
-          if (!permissionGranted) {
-            toast.error("Notification permission required for reminders");
-            return;
-          }
-        }
-        
-        // Set notifications for upcoming assignments
-        const upcomingAssignments = assignments.filter(a => a.daysLeft !== null && a.daysLeft >= 0 && a.daysLeft <= 7);
-        let scheduledCount = 0;
-        
-        for (let i = 0; i < upcomingAssignments.length; i++) {
-          const assignment = upcomingAssignments[i];
-          if (assignment.dueDate) {
-            // Schedule the notification for 1 day before the due date
-            const notificationDate = new Date(assignment.dueDate);
-            notificationDate.setDate(notificationDate.getDate() - 1);
-            notificationDate.setHours(9, 0, 0, 0); // 9 AM
-            
-            // Only schedule if notification time is in the future
-            if (notificationDate > new Date()) {
-              await NotificationService.scheduleNotification(
-                "Assignment Reminder",
-                `${assignment.courseTitle} is due on ${formatDate(assignment.dueDate)}`,
-                i + 1,
-                notificationDate
-              );
-              scheduledCount++;
-            }
-          }
-        }
-        
-        toast.success(`Reminders set for ${scheduledCount} upcoming assignments`);
-      } else {
-        // Fallback for web - just show an immediate notification
-        toast.info("Reminder functionality works best on mobile devices");
-        
-        if ('Notification' in window) {
-          if (Notification.permission === 'granted') {
-            showWebNotificationDemo();
-          } else if (Notification.permission !== 'denied') {
-            const permission = await Notification.requestPermission();
-            if (permission === 'granted') {
-              showWebNotificationDemo();
-            } else {
-              toast.error('Notification permission required for reminders');
-            }
-          }
-        }
+      // Get upcoming assignments for reminders
+      const upcomingAssignments = assignments.filter(a => a.daysLeft !== null && a.daysLeft >= 0 && a.daysLeft <= 7);
+      
+      if (upcomingAssignments.length === 0) {
+        toast.info("No upcoming assignments to set reminders for");
+        return;
       }
+      
+      // Counter for successful additions
+      let addedCount = 0;
+      
+      // Process each assignment
+      upcomingAssignments.forEach(assignment => {
+        if (assignment.dueDate) {
+          // Set start time to 1 day before due date at 9 AM
+          const startDate = new Date(assignment.dueDate);
+          startDate.setDate(startDate.getDate() - 1);
+          startDate.setHours(9, 0, 0, 0);
+          
+          // Only add if start date is in the future
+          if (startDate > new Date()) {
+            // Set end time 1 hour after start
+            const endDate = new Date(startDate);
+            endDate.setHours(endDate.getHours() + 1);
+            
+            // Create description with assignment details
+            const description = `Assignment Due: ${formatDate(assignment.dueDate)}\nCourse: ${assignment.courseCode} - ${assignment.courseTitle}\nFaculty: ${assignment.facultyName}`;
+            
+            // Add to Google Calendar
+            const success = NotificationService.createGoogleCalendarEvent(
+              `Assignment Reminder: ${assignment.courseTitle}`,
+              description,
+              startDate,
+              endDate
+            );
+            
+            if (success) addedCount++;
+          }
+        }
+      });
+      
+      if (addedCount > 0) {
+        toast.success(`Added ${addedCount} assignment reminders to Google Calendar`);
+      } else {
+        toast.info("No reminders were added to Google Calendar");
+      }
+      
     } catch (error) {
       console.error('Error setting reminders:', error);
       toast.error('Failed to set reminders');
     }
   };
-  
+
   const showWebNotificationDemo = () => {
     const upcomingAssignments = assignments.filter(a => a.daysLeft !== null && a.daysLeft >= 0 && a.daysLeft <= 7);
     if (upcomingAssignments.length > 0) {
@@ -158,7 +149,7 @@ export function AssignmentDashboard({ assignments: initialAssignments, onReset }
               onClick={setReminders}
               className="focus-ring"
             >
-              Set Reminders
+              Add to Google Calendar
             </Button>
             <Button 
               variant="ghost" 
