@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -28,18 +29,28 @@ export function AssignmentParser({ onAssignmentsParsed }: AssignmentParserProps)
       
       // Process each line
       const assignments: Assignment[] = [];
-      for (let i = 0; i < lines.length; i++) {
+      
+      // Skip the header row if it exists
+      const startIndex = lines[0].includes('Sl.No') || lines[0].includes('SI.No') ? 1 : 0;
+      
+      for (let i = startIndex; i < lines.length; i++) {
         const line = lines[i].trim();
         
         // Skip empty lines
         if (!line) continue;
         
         // Split the line by tabs or multiple spaces
-        const parts = line.split(/\t|  +/);
+        const parts = line.split(/\t|  +/).filter(part => part.trim() !== '');
         
-        // Check if this looks like a valid assignment row (has at least 6 parts)
-        if (parts.length >= 6 && /^\d+$/.test(parts[0])) {
-          const dueDate = parseDate(parts[4]);
+        console.log('Parsed line parts:', parts);
+        
+        // Check if this looks like a valid assignment row (starts with a number)
+        if (parts.length >= 5 && /^\d+$/.test(parts[0].trim())) {
+          // Extract the date from the 'Upcoming Dues' column
+          let upcomingDues = parts[4];
+          
+          // Get only the date part if it contains more information like days left
+          const dueDate = parseDate(upcomingDues);
           const daysLeft = calculateDaysLeft(dueDate);
           
           assignments.push({
@@ -48,16 +59,18 @@ export function AssignmentParser({ onAssignmentsParsed }: AssignmentParserProps)
             classNbr: parts[1],
             courseCode: parts[2],
             courseTitle: parts[3],
-            upcomingDues: parts[4],
+            upcomingDues: upcomingDues,
             dueDate,
             daysLeft,
-            courseType: parts[5],
+            courseType: parts.length > 5 ? parts[5] : '',
             facultyName: parts.length > 6 ? parts[6] : '',
             dashboard: parts.length > 7 ? parts[7] : '',
           });
         }
       }
 
+      console.log('Parsed assignments:', assignments);
+      
       if (assignments.length === 0) {
         toast.error('No valid assignments found. Please check the format.');
       } else {

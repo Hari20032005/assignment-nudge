@@ -1,19 +1,23 @@
 
 import { format, parse, addDays, differenceInDays } from 'date-fns';
 
-// Parse a date string in the format DD-MMM-YYYY
+// Parse a date string in the format DD-MMM-YYYY or with days left in parentheses
 export function parseDate(dateString: string): Date | null {
-  if (!dateString || dateString === '-' || dateString.includes('Nothing Left')) {
+  if (!dateString || dateString === '-' || dateString.toLowerCase().includes('nothing left')) {
     return null;
   }
   
   try {
     // Extract just the date part if there's additional text
     const dateMatch = dateString.match(/(\d{2}-[A-Za-z]{3}-\d{4})/);
-    if (!dateMatch) return null;
+    if (dateMatch) {
+      const cleanDate = dateMatch[1];
+      return parse(cleanDate, 'dd-MMM-yyyy', new Date());
+    }
     
-    const cleanDate = dateMatch[1];
-    return parse(cleanDate, 'dd-MMM-yyyy', new Date());
+    // If the date is not in the expected format, try to handle other cases
+    console.log('Date string could not be parsed:', dateString);
+    return null;
   } catch (e) {
     console.error('Error parsing date:', e);
     return null;
