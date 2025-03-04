@@ -1,11 +1,10 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { parseDate, calculateDaysLeft } from '@/utils/dateUtils';
 import { Assignment } from '@/lib/types';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 
 interface AssignmentParserProps {
   onAssignmentsParsed: (assignments: Assignment[]) => void;

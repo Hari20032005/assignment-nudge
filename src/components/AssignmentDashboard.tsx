@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { Assignment } from '@/lib/types';
 import { AssignmentCard } from './AssignmentCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 
 interface AssignmentDashboardProps {
   assignments: Assignment[];

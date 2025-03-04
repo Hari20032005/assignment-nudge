@@ -6,9 +6,10 @@ import { cn } from '@/lib/utils';
 interface AssignmentCardProps {
   assignment: Assignment;
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export function AssignmentCard({ assignment, className }: AssignmentCardProps) {
+export function AssignmentCard({ assignment, className, style }: AssignmentCardProps) {
   const status: AssignmentStatus = assignment.daysLeft !== null 
     ? getAssignmentStatus(assignment.daysLeft) 
     : 'none';
@@ -28,6 +29,7 @@ export function AssignmentCard({ assignment, className }: AssignmentCardProps) {
         'glass-card rounded-xl overflow-hidden transition-all duration-300 hover:shadow-md animate-slide-up',
         className
       )}
+      style={style}
     >
       <div className="p-5">
         <div className="flex justify-between items-start mb-2">
