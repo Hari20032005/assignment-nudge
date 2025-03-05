@@ -4,7 +4,7 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 // Firebase configuration (these are safe to be in the client)
 const firebaseConfig = {
-  apiKey: "AIzaSyBjR32GrJfI_X8Jlw2Vg1lQlpVwzYJdY0M",
+  apiKey: "AIzaSyDyFOWGIe7KGeMjR5wJ9_9I2rNAkEgXUa0",
   authDomain: "vit-assignment-reminder.firebaseapp.com",
   projectId: "vit-assignment-reminder",
   storageBucket: "vit-assignment-reminder.appspot.com",
