@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Assignment } from '@/lib/types';
 import { AssignmentCard } from './AssignmentCard';
@@ -51,58 +52,6 @@ export function AssignmentDashboard({ assignments: initialAssignments, onReset }
     toast.success(`Added ${newAssignments.length} new assignments`);
   };
 
-  const setReminders = () => {
-    try {
-      // Get assignments with due dates
-      const assignmentsWithDueDates = assignments.filter(a => a.dueDate !== null);
-      
-      if (assignmentsWithDueDates.length === 0) {
-        toast.info("No assignments with due dates to set reminders for");
-        return;
-      }
-      
-      // Counter for successful additions
-      let addedCount = 0;
-      
-      // Process each assignment
-      assignmentsWithDueDates.forEach(assignment => {
-        if (assignment.dueDate) {
-          // Set start time to 1 day before due date at 9 AM
-          const startDate = new Date(assignment.dueDate);
-          startDate.setDate(startDate.getDate() - 1);
-          startDate.setHours(9, 0, 0, 0);
-          
-          // Set end time 1 hour after start
-          const endDate = new Date(startDate);
-          endDate.setHours(endDate.getHours() + 1);
-          
-          // Create description with assignment details
-          const description = `Assignment Due: ${formatDate(assignment.dueDate)}\nCourse: ${assignment.courseCode} - ${assignment.courseTitle}\nFaculty: ${assignment.facultyName || 'Not specified'}`;
-          
-          // Add to Google Calendar
-          const success = NotificationService.createGoogleCalendarEvent(
-            `Assignment Reminder: ${assignment.courseTitle}`,
-            description,
-            startDate,
-            endDate
-          );
-          
-          if (success) addedCount++;
-        }
-      });
-      
-      if (addedCount > 0) {
-        toast.success(`Added ${addedCount} assignment reminders to Google Calendar`);
-      } else {
-        toast.info("No reminders were added to Google Calendar");
-      }
-      
-    } catch (error) {
-      console.error('Error setting reminders:', error);
-      toast.error('Failed to set reminders');
-    }
-  };
-
   const showWebNotificationDemo = () => {
     const upcomingAssignments = assignments.filter(a => a.daysLeft !== null && a.daysLeft >= 0 && a.daysLeft <= 7);
     if (upcomingAssignments.length > 0) {
@@ -140,13 +89,6 @@ export function AssignmentDashboard({ assignments: initialAssignments, onReset }
               className="focus-ring"
             >
               Add More
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={setReminders}
-              className="focus-ring"
-            >
-              Add to Google Calendar
             </Button>
             <Button 
               variant="ghost" 

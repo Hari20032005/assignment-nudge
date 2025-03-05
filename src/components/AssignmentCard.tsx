@@ -2,6 +2,9 @@
 import { Assignment, AssignmentStatus } from '@/lib/types';
 import { formatDate, getRelativeTimeString, getAssignmentStatus } from '@/utils/dateUtils';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { NotificationService } from '@/services/NotificationService';
+import { toast } from 'sonner';
 
 interface AssignmentCardProps {
   assignment: Assignment;
@@ -21,6 +24,41 @@ export function AssignmentCard({ assignment, className, style }: AssignmentCardP
     overdue: 'bg-red-50 border-red-200 text-red-700',
     completed: 'bg-green-50 border-green-200 text-green-700',
     none: 'bg-gray-50 border-gray-200 text-gray-700',
+  };
+  
+  const addToCalendar = () => {
+    if (!assignment.dueDate) {
+      toast.error('No due date specified for this assignment');
+      return;
+    }
+    
+    // Set start time to 1 day before due date at 9 AM
+    const startDate = new Date(assignment.dueDate);
+    startDate.setDate(startDate.getDate() - 1);
+    startDate.setHours(9, 0, 0, 0);
+    
+    // Set end time 1 hour after start
+    const endDate = new Date(startDate);
+    endDate.setHours(endDate.getHours() + 1);
+    
+    // Create description with assignment details
+    const description = `Assignment Due: ${formatDate(assignment.dueDate)}
+Course: ${assignment.courseCode} - ${assignment.courseTitle}
+Faculty: ${assignment.facultyName || 'Not specified'}`;
+    
+    // Add to Google Calendar
+    const success = NotificationService.createGoogleCalendarEvent(
+      `Assignment Reminder: ${assignment.courseTitle}`,
+      description,
+      startDate,
+      endDate
+    );
+    
+    if (success) {
+      toast.success(`Added reminder for ${assignment.courseTitle} to Google Calendar`);
+    } else {
+      toast.error('Failed to add reminder to Google Calendar');
+    }
   };
   
   return (
@@ -80,6 +118,18 @@ export function AssignmentCard({ assignment, className, style }: AssignmentCardP
             </span>
           </div>
         )}
+        
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="w-full"
+            disabled={!assignment.dueDate}
+            onClick={addToCalendar}
+          >
+            Add to Calendar
+          </Button>
+        </div>
       </div>
     </div>
   );
