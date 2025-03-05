@@ -1,37 +1,39 @@
 
-import { Assignment } from '@/lib/types';
+import { Assignment } from "@/lib/types";
 
-const PREFIX = 'assignments-';
+export class AssignmentStorageService {
+  private static STORAGE_KEY_PREFIX = "assignments_";
 
-export const AssignmentStorageService = {
-  // Save assignments for a specific user
-  saveAssignments: (userId: string, assignments: Assignment[]): void => {
+  static getAssignments(userId: string): Assignment[] {
     try {
-      localStorage.setItem(`${PREFIX}${userId}`, JSON.stringify(assignments));
+      const storageKey = this.getStorageKey(userId);
+      const storedData = localStorage.getItem(storageKey);
+      return storedData ? JSON.parse(storedData) : [];
     } catch (error) {
-      console.error('Error saving assignments:', error);
-    }
-  },
-
-  // Get assignments for a specific user
-  getAssignments: (userId: string): Assignment[] => {
-    try {
-      const storedData = localStorage.getItem(`${PREFIX}${userId}`);
-      if (storedData) {
-        return JSON.parse(storedData);
-      }
-    } catch (error) {
-      console.error('Error retrieving assignments:', error);
-    }
-    return [];
-  },
-
-  // Clear assignments for a specific user
-  clearAssignments: (userId: string): void => {
-    try {
-      localStorage.removeItem(`${PREFIX}${userId}`);
-    } catch (error) {
-      console.error('Error clearing assignments:', error);
+      console.error("Error retrieving assignments:", error);
+      return [];
     }
   }
-};
+
+  static saveAssignments(userId: string, assignments: Assignment[]): void {
+    try {
+      const storageKey = this.getStorageKey(userId);
+      localStorage.setItem(storageKey, JSON.stringify(assignments));
+    } catch (error) {
+      console.error("Error saving assignments:", error);
+    }
+  }
+
+  static clearAssignments(userId: string): void {
+    try {
+      const storageKey = this.getStorageKey(userId);
+      localStorage.removeItem(storageKey);
+    } catch (error) {
+      console.error("Error clearing assignments:", error);
+    }
+  }
+
+  private static getStorageKey(userId: string): string {
+    return `${this.STORAGE_KEY_PREFIX}${userId}`;
+  }
+}

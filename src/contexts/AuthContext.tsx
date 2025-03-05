@@ -1,17 +1,24 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { toast } from 'sonner';
+import { 
+  signInWithPopup, 
+  signOut,
+  onAuthStateChanged,
+  User as FirebaseUser
+} from 'firebase/auth';
+import { auth, googleProvider } from '@/lib/firebase';
 
 interface User {
   id: string;
-  email: string;
-  name: string;
+  email: string | null;
+  name: string | null;
+  photoURL?: string | null;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (name: string, email: string, password: string) => Promise<boolean>;
+  loginWithGoogle: () => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -22,125 +29,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  // Initialize from localStorage on mount
+  // Listen for auth state changes
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setUser(parsedUser);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        const user: User = {
+          id: firebaseUser.uid,
+          email: firebaseUser.email,
+          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+          photoURL: firebaseUser.photoURL
+        };
+        setUser(user);
         setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Failed to parse stored user:', error);
+        localStorage.setItem('user', JSON.stringify(user));
+        
+        // Make sure this user has an entry in localStorage
+        ensureUserInLocalStorage(user);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
         localStorage.removeItem('user');
       }
-    }
+    });
+
+    return () => unsubscribe();
   }, []);
 
-  // Mock login function (in a real app, this would validate against a backend)
-  const login = async (email: string, password: string): Promise<boolean> => {
-    try {
-      // Simple validation
-      if (!email || !password) {
-        toast.error('Please enter both email and password');
-        return false;
-      }
-
-      // Check if user exists in localStorage
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const foundUser = users.find((u: any) => u.email === email);
-
-      if (!foundUser) {
-        toast.error('User not found. Please register first.');
-        return false;
-      }
-
-      if (foundUser.password !== password) {
-        toast.error('Incorrect password');
-        return false;
-      }
-
-      // Create user object without password
-      const authenticatedUser = {
-        id: foundUser.id,
-        email: foundUser.email,
-        name: foundUser.name
-      };
-
-      // Store in state and localStorage
-      setUser(authenticatedUser);
-      setIsAuthenticated(true);
-      localStorage.setItem('user', JSON.stringify(authenticatedUser));
-      
-      toast.success(`Welcome back, ${authenticatedUser.name}!`);
-      return true;
-    } catch (error) {
-      console.error('Login error:', error);
-      toast.error('An error occurred during login');
-      return false;
-    }
-  };
-
-  // Mock register function
-  const register = async (name: string, email: string, password: string): Promise<boolean> => {
-    try {
-      // Simple validation
-      if (!name || !email || !password) {
-        toast.error('Please fill in all fields');
-        return false;
-      }
-
-      // Check if user already exists
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const existingUser = users.find((u: any) => u.email === email);
-
-      if (existingUser) {
-        toast.error('User with this email already exists');
-        return false;
-      }
-
-      // Create new user
-      const newUser = {
-        id: `user-${Date.now()}`,
-        name,
-        email,
-        password // In a real app, this would be hashed
-      };
-
-      // Add to users array
-      users.push(newUser);
+  // Helper function to ensure user is in localStorage for assignments
+  const ensureUserInLocalStorage = (user: User) => {
+    const users = JSON.parse(localStorage.getItem('users') || '[]');
+    const existingUserIndex = users.findIndex((u: any) => u.id === user.id);
+    
+    if (existingUserIndex === -1) {
+      // Add new user without password since we're using Google auth
+      users.push({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        // No password field for Google auth users
+      });
       localStorage.setItem('users', JSON.stringify(users));
+    }
+  };
 
-      // Create user object without password for state
-      const authenticatedUser = {
-        id: newUser.id,
-        email: newUser.email,
-        name: newUser.name
-      };
-
-      // Store in state and localStorage
-      setUser(authenticatedUser);
-      setIsAuthenticated(true);
-      localStorage.setItem('user', JSON.stringify(authenticatedUser));
-      
-      toast.success(`Welcome, ${authenticatedUser.name}!`);
+  const loginWithGoogle = async (): Promise<boolean> => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+      toast.success('Successfully signed in with Google!');
       return true;
-    } catch (error) {
-      console.error('Registration error:', error);
-      toast.error('An error occurred during registration');
+    } catch (error: any) {
+      console.error('Google login error:', error);
+      toast.error(error.message || 'Failed to sign in with Google');
       return false;
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem('user');
-    toast.info('You have been logged out');
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      toast.info('You have been logged out');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('Failed to log out');
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, isAuthenticated }}>
+    <AuthContext.Provider value={{ user, loginWithGoogle, logout, isAuthenticated }}>
       {children}
     </AuthContext.Provider>
   );
