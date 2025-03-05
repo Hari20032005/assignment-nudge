@@ -6,10 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
+import { PasswordRecovery } from './PasswordRecovery';
+import { LockKeyhole, User, Mail } from 'lucide-react';
 
 export function AuthForm() {
   const { login, register } = useAuth();
   const [activeTab, setActiveTab] = useState('login');
+  const [showPasswordRecovery, setShowPasswordRecovery] = useState(false);
   
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -36,6 +39,14 @@ export function AuthForm() {
     setIsRegistering(false);
   };
   
+  if (showPasswordRecovery) {
+    return (
+      <Card className="w-full max-w-md animate-fade-in">
+        <PasswordRecovery onCancel={() => setShowPasswordRecovery(false)} />
+      </Card>
+    );
+  }
+  
   return (
     <Card className="w-full max-w-md">
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -47,14 +58,20 @@ export function AuthForm() {
         <TabsContent value="login">
           <form onSubmit={handleLogin}>
             <CardHeader>
-              <CardTitle>Login</CardTitle>
-              <CardDescription>
+              <CardTitle className="flex items-center justify-center space-x-2">
+                <LockKeyhole className="h-5 w-5" />
+                <span>Login</span>
+              </CardTitle>
+              <CardDescription className="text-center">
                 Enter your credentials to access your assignments
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="flex items-center space-x-1">
+                  <Mail className="h-4 w-4" />
+                  <span>Email</span>
+                </Label>
                 <Input 
                   id="email" 
                   type="email" 
@@ -65,7 +82,10 @@ export function AuthForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="flex items-center space-x-1">
+                  <LockKeyhole className="h-4 w-4" />
+                  <span>Password</span>
+                </Label>
                 <Input 
                   id="password" 
                   type="password" 
@@ -74,6 +94,16 @@ export function AuthForm() {
                   onChange={(e) => setLoginPassword(e.target.value)}
                   required
                 />
+              </div>
+              <div className="text-right">
+                <Button 
+                  type="button" 
+                  variant="link" 
+                  className="text-sm p-0 h-auto"
+                  onClick={() => setShowPasswordRecovery(true)}
+                >
+                  Forgot password?
+                </Button>
               </div>
             </CardContent>
             <CardFooter>
@@ -87,14 +117,20 @@ export function AuthForm() {
         <TabsContent value="register">
           <form onSubmit={handleRegister}>
             <CardHeader>
-              <CardTitle>Create Account</CardTitle>
-              <CardDescription>
+              <CardTitle className="flex items-center justify-center space-x-2">
+                <User className="h-5 w-5" />
+                <span>Create Account</span>
+              </CardTitle>
+              <CardDescription className="text-center">
                 Register to track your assignments
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name" className="flex items-center space-x-1">
+                  <User className="h-4 w-4" />
+                  <span>Name</span>
+                </Label>
                 <Input 
                   id="name" 
                   placeholder="John Doe" 
@@ -104,7 +140,10 @@ export function AuthForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="flex items-center space-x-1">
+                  <Mail className="h-4 w-4" />
+                  <span>Email</span>
+                </Label>
                 <Input 
                   id="email" 
                   type="email" 
@@ -115,7 +154,10 @@ export function AuthForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="flex items-center space-x-1">
+                  <LockKeyhole className="h-4 w-4" />
+                  <span>Password</span>
+                </Label>
                 <Input 
                   id="password" 
                   type="password" 

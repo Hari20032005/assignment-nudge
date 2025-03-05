@@ -10,7 +10,14 @@ import NotFound from "./pages/NotFound";
 import { useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function App() {
   useEffect(() => {
@@ -18,6 +25,9 @@ function App() {
     if (Capacitor.isNativePlatform()) {
       console.log('Running on native platform:', Capacitor.getPlatform());
     }
+
+    // Set the document title
+    document.title = "VIT Assignment Reminder";
   }, []);
 
   return (
