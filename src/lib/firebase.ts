@@ -1,6 +1,7 @@
 
+// We're no longer using Firebase for authentication
+// This file is kept as a placeholder in case we need Firebase for other features in the future
 import { initializeApp } from "firebase/app";
-import { getAuth, createUserWithEmailAndPassword, sendPasswordResetEmail, confirmPasswordReset } from "firebase/auth";
 
 // Firebase configuration (these are safe to be in the client)
 const firebaseConfig = {
@@ -14,11 +15,5 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
 
-export { 
-  auth, 
-  createUserWithEmailAndPassword,
-  sendPasswordResetEmail,
-  confirmPasswordReset
-};
+export { app };

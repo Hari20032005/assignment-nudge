@@ -1,17 +1,6 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { toast } from 'sonner';
-import { 
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  sendEmailVerification,
-  sendPasswordResetEmail,
-  confirmPasswordReset,
-  signOut,
-  onAuthStateChanged,
-  User as FirebaseUser
-} from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 
 // Authentication stages
 enum AuthStage {
@@ -25,7 +14,7 @@ enum AuthStage {
 
 interface User {
   id: string;
-  email: string | null;
+  email: string;
   name: string | null;
   photoURL?: string | null;
 }
@@ -49,70 +38,62 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Client-side "database" of users
+interface StoredUser {
+  id: string;
+  email: string;
+  password: string;
+  name: string;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [authStage, setAuthStage] = useState<AuthStage>(AuthStage.INITIAL);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  // Generate a random confirmation code (simulating AWS Cognito behavior)
+  // Load user session from localStorage on initial render
+  useEffect(() => {
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser) as User;
+      setUser(parsedUser);
+      setIsAuthenticated(true);
+    }
+    setLoading(false);
+  }, []);
+
+  // Generate a random confirmation code
   const generateConfirmationCode = (): string => {
     return Math.floor(100000 + Math.random() * 900000).toString();
   };
 
-  // Store confirmation codes (in memory for demo purposes, would be server-side in production)
+  // Store confirmation codes (in localStorage for demo purposes)
   const [confirmationCodes, setConfirmationCodes] = useState<{[email: string]: string}>({});
 
-  // Listen for auth state changes
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser) {
-        const user: User = {
-          id: firebaseUser.uid,
-          email: firebaseUser.email,
-          name: firebaseUser.email?.split('@')[0] || 'User',
-          photoURL: null
-        };
-        setUser(user);
-        setIsAuthenticated(true);
-        localStorage.setItem('user', JSON.stringify(user));
-        
-        // Make sure this user has an entry in localStorage
-        ensureUserInLocalStorage(user);
-        setAuthStage(AuthStage.INITIAL);
-      } else {
-        setUser(null);
-        setIsAuthenticated(false);
-        localStorage.removeItem('user');
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  // Helper function to ensure user is in localStorage for assignments
-  const ensureUserInLocalStorage = (user: User) => {
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    const existingUserIndex = users.findIndex((u: any) => u.id === user.id);
-    
-    if (existingUserIndex === -1) {
-      users.push({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-      });
-      localStorage.setItem('users', JSON.stringify(users));
-    }
+  // Helper to get all users from localStorage
+  const getUsers = (): StoredUser[] => {
+    const users = localStorage.getItem('users');
+    return users ? JSON.parse(users) : [];
   };
 
-  // Sign up new user (like Cognito's signUp)
+  // Helper to save users to localStorage
+  const saveUsers = (users: StoredUser[]) => {
+    localStorage.setItem('users', JSON.stringify(users));
+  };
+
+  // Sign up new user
   const signUp = async (email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
-      // Create the user in Firebase
-      await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Check if user already exists
+      const users = getUsers();
+      if (users.some(user => user.email === email)) {
+        toast.error('An account with this email already exists');
+        return false;
+      }
       
       // Generate confirmation code
       const code = generateConfirmationCode();
@@ -136,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Confirm sign up (like Cognito's confirmSignUp)
+  // Confirm sign up
   const confirmSignUp = async (email: string, code: string): Promise<boolean> => {
     try {
       setLoading(true);
@@ -148,9 +129,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       if (code === storedCode) {
-        // In a real app, this would perform server-side verification
-        toast.success('Email confirmed successfully!');
-        setAuthStage(AuthStage.SIGN_IN);
+        // Create new user
+        const newUser: StoredUser = {
+          id: `user_${Date.now()}`,
+          email: email,
+          password: 'temp-password', // Will be set when user signs in
+          name: email.split('@')[0]
+        };
+        
+        const users = getUsers();
+        users.push(newUser);
+        saveUsers(users);
         
         // Clean up the code
         setConfirmationCodes(prev => {
@@ -159,6 +148,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return newCodes;
         });
         
+        toast.success('Email confirmed successfully!');
+        setAuthStage(AuthStage.SIGN_IN);
         return true;
       } else {
         toast.error('Incorrect confirmation code');
@@ -194,11 +185,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Sign in (like Cognito's signIn)
+  // Sign in
   const signIn = async (email: string, password: string): Promise<boolean> => {
     try {
       setLoading(true);
-      await signInWithEmailAndPassword(auth, email, password);
+      
+      // Find user
+      const users = getUsers();
+      const user = users.find(u => u.email === email);
+      
+      if (!user) {
+        toast.error('No account found with this email');
+        return false;
+      }
+      
+      // For this client-side demo, we'll store the password on first login
+      // In a real app, you'd verify the password against a hashed version
+      if (!user.password || user.password === 'temp-password') {
+        user.password = password;
+        saveUsers(users);
+      } else if (user.password !== password) {
+        toast.error('Incorrect password');
+        return false;
+      }
+      
+      // Set user session
+      const sessionUser: User = {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      };
+      
+      setUser(sessionUser);
+      setIsAuthenticated(true);
+      localStorage.setItem('currentUser', JSON.stringify(sessionUser));
+      
       toast.success('Signed in successfully!');
       return true;
     } catch (error: any) {
@@ -210,10 +231,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Forgot password (like Cognito's forgotPassword)
+  // Forgot password
   const forgotPassword = async (email: string): Promise<boolean> => {
     try {
       setLoading(true);
+      
+      // Check if user exists
+      const users = getUsers();
+      const userExists = users.some(u => u.email === email);
+      
+      if (!userExists) {
+        toast.error('No account found with this email');
+        return false;
+      }
+      
       // Generate reset code
       const code = generateConfirmationCode();
       setConfirmationCodes(prev => ({...prev, [email]: code}));
@@ -236,7 +267,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Confirm forgot password (like Cognito's confirmForgotPassword)
+  // Confirm forgot password
   const confirmForgotPassword = async (email: string, code: string, newPassword: string): Promise<boolean> => {
     try {
       setLoading(true);
@@ -248,12 +279,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       if (code === storedCode) {
-        // In a real app, this would call a backend API to reset the password
-        // For demo, we'll try to use Firebase's password reset flow
-        try {
-          // This is for simulation purposes only
-          // In a real app, you would use proper backend APIs
-          await signInWithEmailAndPassword(auth, email, "temporaryPassword");
+        // Update user password
+        const users = getUsers();
+        const userIndex = users.findIndex(u => u.email === email);
+        
+        if (userIndex !== -1) {
+          users[userIndex].password = newPassword;
+          saveUsers(users);
+          
           // Clean up the code
           setConfirmationCodes(prev => {
             const newCodes = {...prev};
@@ -264,12 +297,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           toast.success('Password reset successfully!');
           setAuthStage(AuthStage.SIGN_IN);
           return true;
-        } catch (e) {
-          // This will likely fail in the demo, but it's for illustration
-          console.log("Password reset simulation:", e);
-          toast.success('Password reset successfully!');
-          setAuthStage(AuthStage.SIGN_IN);
-          return true;
+        } else {
+          toast.error('User not found');
+          return false;
         }
       } else {
         toast.error('Incorrect reset code');
@@ -285,14 +315,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Logout
-  const logout = async () => {
-    try {
-      await signOut(auth);
-      toast.info('You have been logged out');
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast.error('Failed to log out');
-    }
+  const logout = () => {
+    setUser(null);
+    setIsAuthenticated(false);
+    localStorage.removeItem('currentUser');
+    toast.info('You have been logged out');
   };
 
   return (
