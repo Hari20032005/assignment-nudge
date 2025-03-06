@@ -83,7 +83,7 @@ export function PasswordReset({ onCancel }: PasswordResetProps) {
           
           <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-md border border-slate-200 dark:border-slate-700">
             <p className="text-xs text-muted-foreground">
-              <strong>Demo Note:</strong> For testing purposes, password reset codes are shown in the browser console. In a real application, this code would be sent to your email.
+              When deployed, the reset code will be sent to your email address. Make sure to check your spam folder if you don't see it.
             </p>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { toast } from 'sonner';
 import { NotificationService } from '@/services/NotificationService';
+import { EmailService } from '@/services/EmailService';
 
 // Authentication stages
 enum AuthStage {
@@ -83,22 +84,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('users', JSON.stringify(users));
   };
 
-  // Helper to simulate sending an email with a code
-  const simulateSendingEmail = (email: string, code: string, purpose: string) => {
-    // In a real app, this would call an API to send an email
-    console.log(`[EMAIL SIMULATION] To: ${email}, Code: ${code}, Purpose: ${purpose}`);
-    toast.info(`A verification code has been sent to ${email}`, {
-      description: "For this demo, check your browser console to see the code."
-    });
+  // Helper to send an email with a code
+  const sendEmailWithCode = async (email: string, code: string, purpose: string) => {
+    // Send the email using EmailService
+    const sent = await EmailService.sendVerificationCode(email, code, purpose);
     
-    // Show desktop notification if available
-    if (NotificationService.isAvailable()) {
-      NotificationService.scheduleNotification(
-        "Verification Code",
-        `Your ${purpose} code is: ${code}`,
-        Date.now(),
-        new Date()
-      );
+    if (sent) {
+      toast.success(`A verification code has been sent to ${email}`, {
+        description: "Please check your email inbox and spam folder."
+      });
+    } else {
+      // In case of error, fall back to notification and console output
+      toast.info(`We couldn't send an email to ${email}`, {
+        description: "For this demo, check your browser console to see the code."
+      });
+      
+      // Log to console for development
+      console.log(`[EMAIL SIMULATION] To: ${email}, Code: ${code}, Purpose: ${purpose}`);
+      
+      // Show desktop notification if available
+      if (NotificationService.isAvailable()) {
+        NotificationService.scheduleNotification(
+          "Verification Code",
+          `Your ${purpose} code is: ${code}`,
+          Date.now(),
+          new Date()
+        );
+      }
     }
   };
 
@@ -118,8 +130,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const code = generateConfirmationCode();
       setConfirmationCodes(prev => ({...prev, [email]: code}));
       
-      // Simulate sending email
-      simulateSendingEmail(email, code, "account verification");
+      // Send email with code
+      await sendEmailWithCode(email, code, "account verification");
       
       // Set the pending email and change auth stage
       setPendingEmail(email);
@@ -189,8 +201,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const code = generateConfirmationCode();
       setConfirmationCodes(prev => ({...prev, [email]: code}));
       
-      // Simulate sending email
-      simulateSendingEmail(email, code, "account verification");
+      // Send email with code
+      await sendEmailWithCode(email, code, "account verification");
       
       return true;
     } catch (error: any) {
@@ -266,8 +278,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const code = generateConfirmationCode();
       setConfirmationCodes(prev => ({...prev, [email]: code}));
       
-      // Simulate sending email
-      simulateSendingEmail(email, code, "password reset");
+      // Send email with code
+      await sendEmailWithCode(email, code, "password reset");
       
       // Set the pending email and change auth stage
       setPendingEmail(email);

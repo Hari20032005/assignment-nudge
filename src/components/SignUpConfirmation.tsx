@@ -47,7 +47,7 @@ export function SignUpConfirmation({ onCancel }: SignUpConfirmationProps) {
             maxLength={6}
           />
           <p className="text-xs text-muted-foreground text-center mt-2">
-            For this demo, the confirmation code is displayed in the browser console
+            When deployed, the confirmation code will be sent to your email. Check your inbox and spam folder.
           </p>
         </div>
         <Button 
