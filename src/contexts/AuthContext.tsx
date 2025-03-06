@@ -1,6 +1,6 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { toast } from 'sonner';
+import { NotificationService } from '@/services/NotificationService';
 
 // Authentication stages
 enum AuthStage {
@@ -83,6 +83,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('users', JSON.stringify(users));
   };
 
+  // Helper to simulate sending an email with a code
+  const simulateSendingEmail = (email: string, code: string, purpose: string) => {
+    // In a real app, this would call an API to send an email
+    console.log(`[EMAIL SIMULATION] To: ${email}, Code: ${code}, Purpose: ${purpose}`);
+    toast.info(`A verification code has been sent to ${email}`, {
+      description: "For this demo, check your browser console to see the code."
+    });
+    
+    // Show desktop notification if available
+    if (NotificationService.isAvailable()) {
+      NotificationService.scheduleNotification(
+        "Verification Code",
+        `Your ${purpose} code is: ${code}`,
+        Date.now(),
+        new Date()
+      );
+    }
+  };
+
   // Sign up new user
   const signUp = async (email: string, password: string): Promise<boolean> => {
     try {
@@ -99,14 +118,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const code = generateConfirmationCode();
       setConfirmationCodes(prev => ({...prev, [email]: code}));
       
-      // For demo purposes, log the code to console
-      console.log(`Confirmation code for ${email}: ${code}`);
+      // Simulate sending email
+      simulateSendingEmail(email, code, "account verification");
       
       // Set the pending email and change auth stage
       setPendingEmail(email);
       setAuthStage(AuthStage.CONFIRM_SIGN_UP);
       
-      toast.info(`Confirmation code sent to ${email}. For demo purposes, check the console.`);
       return true;
     } catch (error: any) {
       console.error('Sign up error:', error);
@@ -171,10 +189,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const code = generateConfirmationCode();
       setConfirmationCodes(prev => ({...prev, [email]: code}));
       
-      // For demo purposes, log the code to console
-      console.log(`New confirmation code for ${email}: ${code}`);
+      // Simulate sending email
+      simulateSendingEmail(email, code, "account verification");
       
-      toast.info(`New confirmation code sent to ${email}. For demo purposes, check the console.`);
       return true;
     } catch (error: any) {
       console.error('Resend code error:', error);
@@ -249,14 +266,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const code = generateConfirmationCode();
       setConfirmationCodes(prev => ({...prev, [email]: code}));
       
-      // For demo purposes, log the code to console
-      console.log(`Password reset code for ${email}: ${code}`);
+      // Simulate sending email
+      simulateSendingEmail(email, code, "password reset");
       
       // Set the pending email and change auth stage
       setPendingEmail(email);
       setAuthStage(AuthStage.CONFIRM_RESET_PASSWORD);
       
-      toast.info(`Password reset code sent to ${email}. For demo purposes, check the console.`);
       return true;
     } catch (error: any) {
       console.error('Forgot password error:', error);

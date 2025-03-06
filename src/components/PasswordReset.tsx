@@ -3,8 +3,9 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, KeyRound, LockKeyhole } from "lucide-react";
+import { ArrowLeft, KeyRound, LockKeyhole, Mail } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 interface PasswordResetProps {
   onCancel: () => void;
@@ -20,7 +21,7 @@ export function PasswordReset({ onCancel }: PasswordResetProps) {
     if (!pendingEmail || !code || !newPassword) return;
     
     if (newPassword !== confirmPassword) {
-      alert('Passwords do not match');
+      toast.error('Passwords do not match');
       return;
     }
     
@@ -41,19 +42,22 @@ export function PasswordReset({ onCancel }: PasswordResetProps) {
           <span>Reset Your Password</span>
         </CardTitle>
         <CardDescription className="text-center">
-          We've sent a reset code to {pendingEmail}. Please enter the code and your new password.
+          We've sent a reset code to <strong>{pendingEmail}</strong>. Please enter the code and your new password.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-col space-y-4">
-          <Input
-            type="text"
-            placeholder="Enter reset code"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            className="text-center tracking-widest"
-            maxLength={6}
-          />
+          <div className="relative">
+            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Enter reset code"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              className="pl-9 text-center tracking-widest"
+              maxLength={6}
+            />
+          </div>
           
           <div className="relative">
             <LockKeyhole className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -77,9 +81,11 @@ export function PasswordReset({ onCancel }: PasswordResetProps) {
             />
           </div>
           
-          <p className="text-xs text-muted-foreground text-center">
-            For this demo, the reset code is displayed in the browser console
-          </p>
+          <div className="bg-slate-50 dark:bg-slate-800 p-3 rounded-md border border-slate-200 dark:border-slate-700">
+            <p className="text-xs text-muted-foreground">
+              <strong>Demo Note:</strong> For testing purposes, password reset codes are shown in the browser console. In a real application, this code would be sent to your email.
+            </p>
+          </div>
         </div>
         <Button 
           onClick={handleReset} 
