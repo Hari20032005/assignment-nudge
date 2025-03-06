@@ -2,39 +2,45 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/contexts/AuthContext';
-import { PasswordRecovery } from './PasswordRecovery';
-import { OTPVerification } from './OTPVerification';
-import { LogIn, Mail, User, LockKeyhole } from 'lucide-react';
+import { useAuth, AuthStage } from '@/contexts/AuthContext';
+import { LogIn, Mail, LockKeyhole, UserPlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { SignUpConfirmation } from './SignUpConfirmation';
+import { PasswordReset } from './PasswordReset';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function AuthForm() {
-  const { loginWithEmail, isVerifying } = useAuth();
-  const [showPasswordRecovery, setShowPasswordRecovery] = useState(false);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const { signIn, signUp, forgotPassword, authStage, setAuthStage, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = async () => {
-    if (!email) return;
-    
-    setIsLoggingIn(true);
-    await loginWithEmail(email, password);
-    setIsLoggingIn(false);
+  const handleSignIn = async () => {
+    if (!email || !password) return;
+    await signIn(email, password);
   };
-  
-  if (isVerifying) {
+
+  const handleSignUp = async () => {
+    if (!email || !password) return;
+    await signUp(email, password);
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) return;
+    await forgotPassword(email);
+  };
+
+  if (authStage === AuthStage.CONFIRM_SIGN_UP) {
     return (
       <Card className="w-full max-w-md animate-fade-in">
-        <OTPVerification onCancel={() => setShowPasswordRecovery(false)} />
+        <SignUpConfirmation onCancel={() => setAuthStage(AuthStage.INITIAL)} />
       </Card>
     );
   }
   
-  if (showPasswordRecovery) {
+  if (authStage === AuthStage.CONFIRM_RESET_PASSWORD) {
     return (
       <Card className="w-full max-w-md animate-fade-in">
-        <PasswordRecovery onCancel={() => setShowPasswordRecovery(false)} />
+        <PasswordReset onCancel={() => setAuthStage(AuthStage.INITIAL)} />
       </Card>
     );
   }
@@ -44,15 +50,20 @@ export function AuthForm() {
       <CardHeader className="text-center">
         <CardTitle className="flex items-center justify-center space-x-2">
           <LogIn className="h-5 w-5" />
-          <span>Sign in to VIT Assignment Reminder</span>
+          <span>VIT Assignment Reminder</span>
         </CardTitle>
         <CardDescription>
           Use your email to track your assignments and deadlines
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col space-y-4">
-          <div className="space-y-3">
+        <Tabs defaultValue="signin" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="signin">Sign In</TabsTrigger>
+            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="signin" className="space-y-4">
             <div className="relative">
               <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
@@ -68,40 +79,74 @@ export function AuthForm() {
               <LockKeyhole className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input 
                 type="password" 
-                placeholder="Password (optional for OTP login)"
+                placeholder="Password"
                 className="pl-9"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-          </div>
-          
-          <Button 
-            onClick={handleLogin} 
-            disabled={isLoggingIn || !email}
-            className="w-full py-6"
-          >
-            {isLoggingIn ? 'Sending OTP...' : 'Continue with Email'}
-          </Button>
-          
-          <div className="flex items-center justify-center">
-            <Button
-              variant="link"
-              className="text-sm"
-              onClick={() => setShowPasswordRecovery(true)}
+            
+            <Button 
+              onClick={handleSignIn} 
+              disabled={loading || !email || !password}
+              className="w-full py-6"
             >
-              Forgot password?
+              {loading ? 'Signing in...' : 'Sign In'}
             </Button>
-          </div>
+            
+            <div className="flex items-center justify-center">
+              <Button
+                variant="link"
+                className="text-sm"
+                onClick={handleForgotPassword}
+                disabled={!email}
+              >
+                Forgot password?
+              </Button>
+            </div>
+          </TabsContent>
           
-          <div className="text-center text-sm text-muted-foreground mt-4">
-            <p>
-              By signing in, you agree to our Terms of Service and Privacy Policy.
-            </p>
-            <p className="mt-1 text-xs">
-              Demo note: For testing, the OTP will be displayed in the browser console.
-            </p>
-          </div>
+          <TabsContent value="signup" className="space-y-4">
+            <div className="relative">
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="email"
+                placeholder="Email address"
+                className="pl-9"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            
+            <div className="relative">
+              <LockKeyhole className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input 
+                type="password" 
+                placeholder="Password"
+                className="pl-9"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            
+            <Button 
+              onClick={handleSignUp} 
+              disabled={loading || !email || !password}
+              className="w-full py-6"
+              variant="default"
+            >
+              {loading ? 'Signing up...' : 'Sign Up'}
+            </Button>
+          </TabsContent>
+        </Tabs>
+        
+        <div className="text-center text-sm text-muted-foreground mt-8">
+          <p>
+            By signing in, you agree to our Terms of Service and Privacy Policy.
+          </p>
+          <p className="mt-1 text-xs">
+            Demo note: For testing, confirmation codes will be displayed in the browser console.
+          </p>
         </div>
       </CardContent>
     </Card>
