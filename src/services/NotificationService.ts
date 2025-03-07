@@ -52,9 +52,13 @@ export class NotificationService {
 
   static createGoogleCalendarEvent(title: string, description: string, startDate: Date, endDate: Date) {
     try {
+      // Ensure we're working with Date objects
+      const start = startDate instanceof Date ? startDate : new Date(startDate);
+      const end = endDate instanceof Date ? endDate : new Date(endDate);
+      
       // Format dates for Google Calendar URL
-      const startIso = startDate.toISOString().replace(/-|:|\.\d+/g, '');
-      const endIso = endDate.toISOString().replace(/-|:|\.\d+/g, '');
+      const startIso = start.toISOString().replace(/-|:|\.\d+/g, '');
+      const endIso = end.toISOString().replace(/-|:|\.\d+/g, '');
 
       // Encode the event parameters
       const eventParams = {
@@ -87,6 +91,8 @@ export class NotificationService {
         <html>
         <head>
           <title>Add Assignments to Google Calendar</title>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           <style>
             body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
             h1 { color: #4285f4; }
@@ -96,38 +102,57 @@ export class NotificationService {
             .instructions { background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; }
             .add-all { margin: 20px 0; text-align: center; }
             .add-all .btn { background: #0f9d58; font-size: 16px; padding: 12px 24px; }
+            .progress { margin-top: 20px; }
+            .progress-bar { background: #f0f0f0; border-radius: 4px; height: 10px; overflow: hidden; }
+            .progress-fill { background: #4285f4; height: 100%; width: 0; transition: width 0.3s; }
+            .status { text-align: center; margin-top: 10px; font-size: 14px; }
           </style>
         </head>
         <body>
           <h1>VIT Assignment Calendar</h1>
           <div class="instructions">
-            <p><strong>Instructions:</strong> Click on each "Add to Calendar" button below to add individual assignments to your Google Calendar. 
-            You will need to complete the process in Google Calendar for each assignment.</p>
+            <p><strong>Instructions:</strong> Click on "Add to Calendar" for each assignment to add them to your Google Calendar. 
+            The first assignment will open automatically. After adding it, come back to this page to add the remaining assignments.</p>
+          </div>
+          
+          <div class="progress">
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="status" id="status">Ready to add assignments</div>
           </div>
       `;
       
       // Generate a section for each assignment
       assignments.forEach((assignment, index) => {
-        const calendarUrl = this.createGoogleCalendarEvent(
-          assignment.title,
-          assignment.description,
-          assignment.startDate,
-          assignment.endDate
-        );
-        
-        if (calendarUrl) {
-          htmlContent += `
-            <div class="assignment">
-              <h2>${assignment.title}</h2>
-              <p>${assignment.description.replace(/\n/g, '<br>')}</p>
-              <p><strong>Date:</strong> ${assignment.startDate.toLocaleDateString()} - ${assignment.endDate.toLocaleDateString()}</p>
-              <a href="${calendarUrl}" target="_blank" class="btn">Add to Calendar</a>
-            </div>
-          `;
+        try {
+          // Ensure we're working with Date objects
+          const startDate = assignment.startDate instanceof Date ? assignment.startDate : new Date(assignment.startDate);
+          const endDate = assignment.endDate instanceof Date ? assignment.endDate : new Date(assignment.endDate);
+          
+          const calendarUrl = this.createGoogleCalendarEvent(
+            assignment.title,
+            assignment.description,
+            startDate,
+            endDate
+          );
+          
+          if (calendarUrl) {
+            htmlContent += `
+              <div class="assignment" id="assignment-${index}">
+                <h2>${assignment.title}</h2>
+                <p>${assignment.description.replace(/\n/g, '<br>')}</p>
+                <p><strong>Date:</strong> ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}</p>
+                <a href="${calendarUrl}" target="_blank" class="btn" id="link-${index}" onclick="updateProgress(${index}, ${assignments.length})">Add to Calendar</a>
+              </div>
+            `;
+          }
+        } catch (err) {
+          console.error('Error creating calendar entry:', err);
         }
       });
       
-      // Close the HTML
+      // Add JavaScript to track progress and open the first link
       htmlContent += `
           <script>
             // Open the first calendar link automatically
@@ -137,6 +162,41 @@ export class NotificationService {
                 links[0].click();
               }
             };
+            
+            // Function to update progress bar
+            function updateProgress(index, total) {
+              const progressFill = document.getElementById('progressFill');
+              const statusEl = document.getElementById('status');
+              const percent = Math.round(((index + 1) / total) * 100);
+              
+              progressFill.style.width = percent + '%';
+              statusEl.textContent = 'Added ' + (index + 1) + ' of ' + total + ' assignments';
+              
+              // Mark this assignment as added
+              const assignmentEl = document.getElementById('assignment-' + index);
+              if (assignmentEl) {
+                assignmentEl.style.backgroundColor = '#f0f8ff';
+                assignmentEl.style.borderColor = '#a7d8ff';
+              }
+              
+              // Highlight the next assignment
+              if (index + 1 < total) {
+                const nextAssignment = document.getElementById('assignment-' + (index + 1));
+                if (nextAssignment) {
+                  nextAssignment.style.backgroundColor = '#fffaf0';
+                  nextAssignment.style.borderColor = '#ffe7a0';
+                  
+                  // Scroll to the next assignment
+                  setTimeout(() => {
+                    nextAssignment.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }, 500);
+                }
+              } else {
+                statusEl.textContent = 'All assignments added to calendar!';
+                statusEl.style.color = '#0f9d58';
+                statusEl.style.fontWeight = 'bold';
+              }
+            }
           </script>
         </body>
         </html>

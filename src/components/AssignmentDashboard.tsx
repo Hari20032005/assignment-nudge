@@ -7,7 +7,7 @@ import { AssignmentParser } from './AssignmentParser';
 import { toast } from 'sonner';
 import { NotificationService } from '@/services/NotificationService';
 import { formatDate } from '@/utils/dateUtils';
-import { Calendar } from 'lucide-react';
+import { Calendar, Download, Filter, SortAsc } from 'lucide-react';
 
 interface AssignmentDashboardProps {
   assignments: Assignment[];
@@ -26,7 +26,12 @@ export function AssignmentDashboard({ assignments: initialAssignments, onReset }
       if (a.dueDate === null && b.dueDate === null) return 0;
       if (a.dueDate === null) return 1;
       if (b.dueDate === null) return -1;
-      return a.dueDate.getTime() - b.dueDate.getTime();
+      
+      // Safe check to ensure we're dealing with Date objects
+      const dateA = a.dueDate instanceof Date ? a.dueDate : new Date(a.dueDate);
+      const dateB = b.dueDate instanceof Date ? b.dueDate : new Date(b.dueDate);
+      
+      return dateA.getTime() - dateB.getTime();
     });
     
     setSortedAssignments(sorted);
@@ -63,7 +68,7 @@ export function AssignmentDashboard({ assignments: initialAssignments, onReset }
     // Prepare calendar event data for each assignment
     const calendarEvents = assignmentsWithDueDate.map(assignment => {
       // Set start time to 1 day before due date at 9 AM
-      const startDate = new Date(assignment.dueDate!);
+      const startDate = new Date(assignment.dueDate instanceof Date ? assignment.dueDate : new Date(assignment.dueDate));
       startDate.setDate(startDate.getDate() - 1);
       startDate.setHours(9, 0, 0, 0);
       
@@ -94,6 +99,37 @@ Faculty: ${assignment.facultyName || 'Not specified'}`;
     }
   };
 
+  const exportAssignmentsAsCSV = () => {
+    if (assignments.length === 0) {
+      toast.error('No assignments to export');
+      return;
+    }
+
+    // Create CSV header
+    let csv = 'Course Code,Course Title,Due Date,Days Left,Faculty Name\n';
+    
+    // Add each assignment as a row
+    assignments.forEach(assignment => {
+      const dueDate = assignment.dueDate ? formatDate(assignment.dueDate) : 'No deadline';
+      const daysLeft = assignment.daysLeft !== null ? assignment.daysLeft : 'N/A';
+      
+      csv += `"${assignment.courseCode}","${assignment.courseTitle}","${dueDate}","${daysLeft}","${assignment.facultyName}"\n`;
+    });
+    
+    // Create download link
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('hidden', '');
+    a.setAttribute('href', url);
+    a.setAttribute('download', 'vit_assignments.csv');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    
+    toast.success('Assignments exported successfully');
+  };
+
   return (
     <div className="w-full max-w-5xl mx-auto transition-all duration-300 animate-fade-in">
       {showAddMore ? (
@@ -113,7 +149,7 @@ Faculty: ${assignment.facultyName || 'Not specified'}`;
             <p className="text-muted-foreground mt-1">Manage your upcoming due dates</p>
           </div>
           
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <Button 
               variant="outline" 
               onClick={() => setShowAddMore(true)}
@@ -128,6 +164,14 @@ Faculty: ${assignment.facultyName || 'Not specified'}`;
             >
               <Calendar className="h-4 w-4" />
               Add All to Calendar
+            </Button>
+            <Button 
+              variant="outline"
+              onClick={exportAssignmentsAsCSV}
+              className="focus-ring gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Export CSV
             </Button>
             <Button 
               variant="ghost" 
