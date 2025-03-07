@@ -61,10 +61,11 @@ export function AssignmentDashboard({ assignments: initialAssignments, onReset }
       return;
     }
     
-    let successCount = 0;
+    // Track if we've successfully started the calendar creation process
+    let calendarWindowOpened = false;
     
-    // Add each assignment to Google Calendar
-    assignmentsWithDueDate.forEach(assignment => {
+    // Process each assignment
+    assignmentsWithDueDate.forEach((assignment, index) => {
       // Set start time to 1 day before due date at 9 AM
       const startDate = new Date(assignment.dueDate!);
       startDate.setDate(startDate.getDate() - 1);
@@ -79,20 +80,22 @@ export function AssignmentDashboard({ assignments: initialAssignments, onReset }
 Course: ${assignment.courseCode} - ${assignment.courseTitle}
 Faculty: ${assignment.facultyName || 'Not specified'}`;
       
-      // Add to Google Calendar
-      const success = NotificationService.createGoogleCalendarEvent(
-        `Assignment Reminder: ${assignment.courseTitle}`,
-        description,
-        startDate,
-        endDate
-      );
-      
-      if (success) {
-        successCount++;
-      }
+      // Add a slight delay to each calendar opening to prevent browser blocking
+      setTimeout(() => {
+        const success = NotificationService.createGoogleCalendarEvent(
+          `Assignment Reminder: ${assignment.courseTitle}`,
+          description,
+          startDate,
+          endDate
+        );
+        
+        if (success && !calendarWindowOpened) {
+          calendarWindowOpened = true;
+        }
+      }, index * 300); // 300ms delay between each window open
     });
     
-    toast.success(`Added ${successCount} of ${assignmentsWithDueDate.length} assignments to Google Calendar`);
+    toast.success(`Opening ${assignmentsWithDueDate.length} calendar events. Please allow popups.`);
   };
 
   return (

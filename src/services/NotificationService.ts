@@ -73,7 +73,14 @@ export class NotificationService {
       const calendarUrl = `${baseUrl}?${queryString}`;
       
       // Open the URL in a new tab
-      window.open(calendarUrl, '_blank');
+      const newWindow = window.open(calendarUrl, '_blank');
+      
+      // Check if the window was successfully opened
+      if (newWindow === null) {
+        console.error('Pop-up was blocked. Please allow pop-ups for this site.');
+        return false;
+      }
+      
       return true;
     } catch (error) {
       console.error('Error creating Google Calendar event:', error);
