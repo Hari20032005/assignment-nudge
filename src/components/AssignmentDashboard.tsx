@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Assignment } from '@/lib/types';
 import { AssignmentCard } from './AssignmentCard';
@@ -61,11 +60,8 @@ export function AssignmentDashboard({ assignments: initialAssignments, onReset }
       return;
     }
     
-    // Track if we've successfully started the calendar creation process
-    let calendarWindowOpened = false;
-    
-    // Process each assignment
-    assignmentsWithDueDate.forEach((assignment, index) => {
+    // Prepare calendar event data for each assignment
+    const calendarEvents = assignmentsWithDueDate.map(assignment => {
       // Set start time to 1 day before due date at 9 AM
       const startDate = new Date(assignment.dueDate!);
       startDate.setDate(startDate.getDate() - 1);
@@ -79,23 +75,23 @@ export function AssignmentDashboard({ assignments: initialAssignments, onReset }
       const description = `Assignment Due: ${formatDate(assignment.dueDate)}
 Course: ${assignment.courseCode} - ${assignment.courseTitle}
 Faculty: ${assignment.facultyName || 'Not specified'}`;
-      
-      // Add a slight delay to each calendar opening to prevent browser blocking
-      setTimeout(() => {
-        const success = NotificationService.createGoogleCalendarEvent(
-          `Assignment Reminder: ${assignment.courseTitle}`,
-          description,
-          startDate,
-          endDate
-        );
-        
-        if (success && !calendarWindowOpened) {
-          calendarWindowOpened = true;
-        }
-      }, index * 300); // 300ms delay between each window open
+
+      return {
+        title: `Assignment Reminder: ${assignment.courseTitle}`,
+        description,
+        startDate,
+        endDate
+      };
     });
     
-    toast.success(`Opening ${assignmentsWithDueDate.length} calendar events. Please allow popups.`);
+    // Create and open a page with all calendar events
+    const success = NotificationService.createMultipleCalendarEventsLink(calendarEvents);
+    
+    if (success) {
+      toast.success('Opening calendar events page. Please allow popups.');
+    } else {
+      toast.error('Failed to open calendar events. Please check popup settings and try again.');
+    }
   };
 
   return (
