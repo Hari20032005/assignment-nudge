@@ -1,4 +1,3 @@
-
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Capacitor } from '@capacitor/core';
 
@@ -80,6 +79,67 @@ export class NotificationService {
     } catch (error) {
       console.error('Error creating Google Calendar event URL:', error);
       return null;
+    }
+  }
+  
+  static addMultipleEventsToCalendar(assignments: { title: string, description: string, startDate: Date, endDate: Date }[]) {
+    if (assignments.length === 0) return false;
+    
+    try {
+      // Create ICS file content
+      let icsContent = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//VIT Assignment Reminder//EN',
+        'CALSCALE:GREGORIAN',
+        'METHOD:PUBLISH'
+      ];
+      
+      // Add each assignment as a separate event
+      assignments.forEach(assignment => {
+        const start = assignment.startDate instanceof Date ? assignment.startDate : new Date(assignment.startDate);
+        const end = assignment.endDate instanceof Date ? assignment.endDate : new Date(assignment.endDate);
+        
+        const startStr = start.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        const endStr = end.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        
+        // Sanitize description (remove commas, semicolons, etc. that might break the ICS format)
+        const sanitizedDesc = assignment.description
+          .replace(/\\n/g, '\\n')
+          .replace(/,/g, '\\,')
+          .replace(/;/g, '\\;');
+        
+        const event = [
+          'BEGIN:VEVENT',
+          `UID:${Math.random().toString(36).substring(2)}@vit-assignments`,
+          `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
+          `DTSTART:${startStr}`,
+          `DTEND:${endStr}`,
+          `SUMMARY:${assignment.title}`,
+          `DESCRIPTION:${sanitizedDesc}`,
+          'END:VEVENT'
+        ];
+        
+        icsContent = [...icsContent, ...event];
+      });
+      
+      // Close the calendar
+      icsContent.push('END:VCALENDAR');
+      
+      // Create a blob and download link
+      const blob = new Blob([icsContent.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'vit_assignments.ics');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      return true;
+    } catch (error) {
+      console.error('Error creating calendar events:', error);
+      return false;
     }
   }
   

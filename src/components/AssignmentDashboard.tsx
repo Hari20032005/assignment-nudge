@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Assignment } from '@/lib/types';
 import { AssignmentCard } from './AssignmentCard';
@@ -89,13 +90,15 @@ Faculty: ${assignment.facultyName || 'Not specified'}`;
       };
     });
     
-    // Create and open a page with all calendar events
-    const success = NotificationService.createMultipleCalendarEventsLink(calendarEvents);
+    // Use the new method to add all events to calendar at once
+    const success = NotificationService.addMultipleEventsToCalendar(calendarEvents);
     
     if (success) {
-      toast.success('Opening calendar events page. Please allow popups.');
+      toast.success(`Added ${calendarEvents.length} assignments to calendar`, {
+        description: "Check your downloads for the .ics file that you can import to any calendar app"
+      });
     } else {
-      toast.error('Failed to open calendar events. Please check popup settings and try again.');
+      toast.error('Failed to create calendar events. Please try again.');
     }
   };
 
