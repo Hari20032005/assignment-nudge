@@ -8,6 +8,7 @@ import { AssignmentParser } from './AssignmentParser';
 import { toast } from 'sonner';
 import { NotificationService } from '@/services/NotificationService';
 import { formatDate } from '@/utils/dateUtils';
+import { Calendar } from 'lucide-react';
 
 interface AssignmentDashboardProps {
   assignments: Assignment[];
@@ -52,15 +53,46 @@ export function AssignmentDashboard({ assignments: initialAssignments, onReset }
     toast.success(`Added ${newAssignments.length} new assignments`);
   };
 
-  const showWebNotificationDemo = () => {
-    const upcomingAssignments = assignments.filter(a => a.daysLeft !== null && a.daysLeft >= 0 && a.daysLeft <= 7);
-    if (upcomingAssignments.length > 0) {
-      const firstAssignment = upcomingAssignments[0];
-      new Notification('Assignment Reminder', {
-        body: `${firstAssignment.courseTitle} is due in ${firstAssignment.daysLeft} day(s)`,
-        icon: '/favicon.ico'
-      });
+  const addAllToCalendar = () => {
+    const assignmentsWithDueDate = assignments.filter(a => a.dueDate !== null);
+    
+    if (assignmentsWithDueDate.length === 0) {
+      toast.error('No assignments with due dates to add to calendar');
+      return;
     }
+    
+    let successCount = 0;
+    
+    // Add each assignment to Google Calendar
+    assignmentsWithDueDate.forEach(assignment => {
+      // Set start time to 1 day before due date at 9 AM
+      const startDate = new Date(assignment.dueDate!);
+      startDate.setDate(startDate.getDate() - 1);
+      startDate.setHours(9, 0, 0, 0);
+      
+      // Set end time 1 hour after start
+      const endDate = new Date(startDate);
+      endDate.setHours(endDate.getHours() + 1);
+      
+      // Create description with assignment details
+      const description = `Assignment Due: ${formatDate(assignment.dueDate)}
+Course: ${assignment.courseCode} - ${assignment.courseTitle}
+Faculty: ${assignment.facultyName || 'Not specified'}`;
+      
+      // Add to Google Calendar
+      const success = NotificationService.createGoogleCalendarEvent(
+        `Assignment Reminder: ${assignment.courseTitle}`,
+        description,
+        startDate,
+        endDate
+      );
+      
+      if (success) {
+        successCount++;
+      }
+    });
+    
+    toast.success(`Added ${successCount} of ${assignmentsWithDueDate.length} assignments to Google Calendar`);
   };
 
   return (
@@ -89,6 +121,14 @@ export function AssignmentDashboard({ assignments: initialAssignments, onReset }
               className="focus-ring"
             >
               Add More
+            </Button>
+            <Button
+              variant="default"
+              onClick={addAllToCalendar}
+              className="focus-ring gap-2"
+            >
+              <Calendar className="h-4 w-4" />
+              Add All to Calendar
             </Button>
             <Button 
               variant="ghost" 
