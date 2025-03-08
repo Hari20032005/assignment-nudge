@@ -1,5 +1,5 @@
 
-import { LocalNotifications } from '@capacitor/local-notifications';
+import { LocalNotifications } from '@capacitor/core';
 import { Capacitor } from '@capacitor/core';
 
 export class NotificationService {
@@ -99,131 +99,181 @@ export class NotificationService {
   static addMultipleEventsToCalendar(assignments: { title: string, description: string, startDate: Date, endDate: Date }[]) {
     if (assignments.length === 0) return false;
     
-    // Create a temporary HTML page with links to all calendar events
-    let htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Add Assignments to Google Calendar</title>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <style>
-          body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-          h1 { color: #4285f4; }
-          .assignment { margin-bottom: 20px; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; }
-          .assignment h2 { margin-top: 0; font-size: 18px; }
-          .btn { display: inline-block; background: #4285f4; color: white; padding: 10px 15px; text-decoration: none; border-radius: 4px; margin-top: 10px; }
-          .instructions { background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; }
-          .add-all { margin: 20px 0; text-align: center; }
-          .add-all .btn { background: #0f9d58; font-size: 16px; padding: 12px 24px; }
-          .progress { margin-top: 20px; }
-          .progress-bar { background: #f0f0f0; border-radius: 4px; height: 10px; overflow: hidden; }
-          .progress-fill { background: #4285f4; height: 100%; width: 0; transition: width 0.3s; }
-          .status { text-align: center; margin-top: 10px; font-size: 14px; }
-        </style>
-      </head>
-      <body>
-        <h1>VIT Assignment Calendar</h1>
-        <div class="instructions">
-          <p><strong>Instructions:</strong> Click on each assignment to add it to your Google Calendar. 
-          The first assignment will open automatically. After adding it, come back to this page to add the remaining assignments.</p>
-        </div>
-        
-        <div class="progress">
-          <div class="progress-bar">
-            <div class="progress-fill" id="progressFill"></div>
+    // Create a Google Calendar batch URL
+    const baseUrl = 'https://calendar.google.com/calendar/render';
+    let batchUrl = baseUrl;
+    
+    // Add the first assignment directly to the URL
+    const firstAssignment = assignments[0];
+    const startIso = firstAssignment.startDate.toISOString().replace(/-|:|\.\d+/g, '');
+    const endIso = firstAssignment.endDate.toISOString().replace(/-|:|\.\d+/g, '');
+    
+    batchUrl += `?action=TEMPLATE&text=${encodeURIComponent(firstAssignment.title)}&details=${encodeURIComponent(firstAssignment.description)}&dates=${startIso}/${endIso}`;
+    
+    // Open the URL in a new tab
+    window.open(batchUrl, '_blank');
+    
+    // For each additional assignment, we'll create a script that will open a new window after a delay
+    if (assignments.length > 1) {
+      // Create HTML content with JavaScript to handle batch adding
+      let htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Adding Assignments to Google Calendar</title>
+          <meta charset="UTF-8">
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; line-height: 1.6; }
+            .progress { margin: 20px 0; }
+            .progress-bar { background: #f0f0f0; border-radius: 4px; height: 10px; overflow: hidden; }
+            .progress-fill { background: #4285f4; height: 100%; width: 0; transition: width 0.3s; }
+            .status { margin-top: 10px; font-size: 14px; }
+            h1 { color: #4285f4; }
+            .instructions { background: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0; }
+            .assignment { margin-bottom: 10px; }
+          </style>
+        </head>
+        <body>
+          <h1>Adding Assignments to Google Calendar</h1>
+          <div class="instructions">
+            <p><strong>Do not close this window</strong> until all assignments are added.</p>
+            <p>Google Calendar tabs will open automatically in sequence. For each new tab:</p>
+            <ol>
+              <li>Click "Add" or "Save" in Google Calendar</li>
+              <li>Close that tab to continue the process</li>
+            </ol>
           </div>
-          <div class="status" id="status">Ready to add assignments</div>
-        </div>
-    `;
-    
-    // Generate a section for each assignment
-    assignments.forEach((assignment, index) => {
-      try {
-        // Get the Google Calendar URL for this assignment
-        const calendarUrl = this.createGoogleCalendarEvent(
-          assignment.title,
-          assignment.description,
-          assignment.startDate,
-          assignment.endDate
-        );
-        
-        if (calendarUrl) {
-          htmlContent += `
-            <div class="assignment" id="assignment-${index}">
-              <h2>${assignment.title}</h2>
-              <p>${assignment.description.replace(/\n/g, '<br>')}</p>
-              <p><strong>Date:</strong> ${assignment.startDate.toLocaleDateString()} - ${assignment.endDate.toLocaleDateString()}</p>
-              <a href="${calendarUrl}" target="_blank" class="btn" id="link-${index}" onclick="updateProgress(${index}, ${assignments.length})">Add to Calendar</a>
-            </div>
-          `;
-        }
-      } catch (err) {
-        console.error('Error creating calendar entry:', err);
-      }
-    });
-    
-    // Add JavaScript to track progress and open the first link
-    htmlContent += `
-        <script>
-          // Open the first calendar link automatically
-          window.onload = function() {
-            const links = document.querySelectorAll('.btn');
-            if (links.length > 0) {
-              links[0].click();
-            }
-          };
           
-          // Function to update progress bar
-          function updateProgress(index, total) {
-            const progressFill = document.getElementById('progressFill');
-            const statusEl = document.getElementById('status');
-            const percent = Math.round(((index + 1) / total) * 100);
-            
-            progressFill.style.width = percent + '%';
-            statusEl.textContent = 'Added ' + (index + 1) + ' of ' + total + ' assignments';
-            
-            // Mark this assignment as added
-            const assignmentEl = document.getElementById('assignment-' + index);
-            if (assignmentEl) {
-              assignmentEl.style.backgroundColor = '#f0f8ff';
-              assignmentEl.style.borderColor = '#a7d8ff';
-            }
-            
-            // Highlight the next assignment
-            if (index + 1 < total) {
-              const nextAssignment = document.getElementById('assignment-' + (index + 1));
-              if (nextAssignment) {
-                nextAssignment.style.backgroundColor = '#fffaf0';
-                nextAssignment.style.borderColor = '#ffe7a0';
-                
-                // Scroll to the next assignment
-                setTimeout(() => {
-                  nextAssignment.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 500);
+          <div class="progress">
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="status" id="status">Adding 1 of ${assignments.length} assignments...</div>
+          </div>
+          
+          <div id="assignmentList">
+            <h3>Assignments being added:</h3>
+      `;
+      
+      // List the assignments
+      assignments.forEach((assignment, index) => {
+        htmlContent += `
+          <div class="assignment" id="assignment-${index}">
+            ${index + 1}. ${assignment.title} (${assignment.startDate.toLocaleDateString()})
+          </div>
+        `;
+      });
+      
+      // Add script to handle opening calendar tabs sequentially
+      htmlContent += `
+          </div>
+          
+          <script>
+            const assignments = ${JSON.stringify(assignments, (key, value) => {
+              // Convert dates to ISO strings
+              if (value instanceof Date) {
+                return value.toISOString();
               }
-            } else {
-              statusEl.textContent = 'All assignments added to calendar!';
-              statusEl.style.color = '#0f9d58';
-              statusEl.style.fontWeight = 'bold';
+              return value;
+            })};
+            
+            let currentIndex = 0; // First assignment is already opened
+            const totalAssignments = assignments.length;
+            
+            function updateProgress() {
+              const progressFill = document.getElementById('progressFill');
+              const statusEl = document.getElementById('status');
+              const percent = Math.round(((currentIndex + 1) / totalAssignments) * 100);
+              
+              progressFill.style.width = percent + '%';
+              statusEl.textContent = 'Adding ' + (currentIndex + 1) + ' of ' + totalAssignments + ' assignments...';
+              
+              // Mark assignment as being processed
+              if (currentIndex < totalAssignments) {
+                const assignmentEl = document.getElementById('assignment-' + currentIndex);
+                if (assignmentEl) {
+                  assignmentEl.style.fontWeight = 'bold';
+                  assignmentEl.style.color = '#4285f4';
+                }
+              }
             }
-          }
-        </script>
-      </body>
-      </html>
-    `;
-    
-    // Create a blob from the HTML content
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    
-    // Open the HTML page in a new tab
-    const newWindow = window.open(url, '_blank');
-    
-    // Check if the window was successfully opened
-    if (newWindow === null) {
-      console.error('Pop-up was blocked. Please allow pop-ups for this site.');
-      return false;
+            
+            function openNextCalendarEvent() {
+              currentIndex++;
+              
+              if (currentIndex < totalAssignments) {
+                const assignment = assignments[currentIndex];
+                
+                // Parse saved ISO date strings back to Date objects
+                const startDate = new Date(assignment.startDate);
+                const endDate = new Date(assignment.endDate);
+                
+                // Format dates for Google Calendar URL
+                const startIso = startDate.toISOString().replace(/-|:|\.\d+/g, '');
+                const endIso = endDate.toISOString().replace(/-|:|\.\d+/g, '');
+                
+                // Build Google Calendar URL
+                const url = 'https://calendar.google.com/calendar/render' +
+                  '?action=TEMPLATE' +
+                  '&text=' + encodeURIComponent(assignment.title) +
+                  '&details=' + encodeURIComponent(assignment.description) +
+                  '&dates=' + startIso + '/' + endIso;
+                
+                // Open Google Calendar in new tab
+                window.open(url, '_blank', 'noopener');
+                updateProgress();
+                
+                // Check every second if the calendar tab was closed, then open the next one
+                const checkInterval = setInterval(() => {
+                  if (document.hasFocus()) {
+                    clearInterval(checkInterval);
+                    setTimeout(openNextCalendarEvent, 500); // Wait a bit before opening the next tab
+                  }
+                }, 1000);
+              } else {
+                // All assignments have been processed
+                document.getElementById('status').textContent = 'All assignments added to calendar!';
+                document.getElementById('status').style.fontWeight = 'bold';
+                document.getElementById('status').style.color = '#0f9d58';
+              }
+            }
+            
+            // Initialize and start the process
+            updateProgress();
+            
+            // Listen for when this page gets focus (after user closes calendar tab)
+            window.addEventListener('focus', function() {
+              if (currentIndex > 0 && currentIndex < totalAssignments) {
+                setTimeout(openNextCalendarEvent, 500);
+              }
+            });
+            
+            // Start monitoring for first calendar tab to be closed
+            setTimeout(() => {
+              const checkInterval = setInterval(() => {
+                if (document.hasFocus()) {
+                  clearInterval(checkInterval);
+                  setTimeout(openNextCalendarEvent, 500);
+                }
+              }, 1000);
+            }, 1000);
+          </script>
+        </body>
+        </html>
+      `;
+      
+      // Create a blob from the HTML content
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      
+      // Open the helper page in a new tab
+      const helperWindow = window.open(url, '_blank');
+      
+      // Check if the window was successfully opened
+      if (helperWindow === null) {
+        console.error('Pop-up was blocked. Please allow pop-ups for this site.');
+        return false;
+      }
     }
     
     return true;

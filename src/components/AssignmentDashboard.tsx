@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Assignment } from '@/lib/types';
 import { AssignmentCard } from './AssignmentCard';
@@ -22,13 +21,11 @@ export function AssignmentDashboard({ assignments: initialAssignments, onReset }
   const [showAddMore, setShowAddMore] = useState(false);
 
   useEffect(() => {
-    // First sort by due date (null dates at the end)
     const sorted = [...assignments].sort((a, b) => {
       if (a.dueDate === null && b.dueDate === null) return 0;
       if (a.dueDate === null) return 1;
       if (b.dueDate === null) return -1;
       
-      // Safe check to ensure we're dealing with Date objects
       const dateA = a.dueDate instanceof Date ? a.dueDate : new Date(a.dueDate);
       const dateB = b.dueDate instanceof Date ? b.dueDate : new Date(b.dueDate);
       
@@ -51,7 +48,6 @@ export function AssignmentDashboard({ assignments: initialAssignments, onReset }
   const noDeadlineCount = assignments.filter(a => a.dueDate === null).length;
 
   const handleAddMore = (newAssignments: Assignment[]) => {
-    // Combine existing assignments with new ones
     const updatedAssignments = [...assignments, ...newAssignments];
     setAssignments(updatedAssignments);
     setShowAddMore(false);
@@ -66,18 +62,14 @@ export function AssignmentDashboard({ assignments: initialAssignments, onReset }
       return;
     }
     
-    // Prepare calendar event data for each assignment
     const calendarEvents = assignmentsWithDueDate.map(assignment => {
-      // Set start time to 1 day before due date at 9 AM
       const startDate = new Date(assignment.dueDate instanceof Date ? assignment.dueDate : new Date(assignment.dueDate));
       startDate.setDate(startDate.getDate() - 1);
       startDate.setHours(9, 0, 0, 0);
       
-      // Set end time 1 hour after start
       const endDate = new Date(startDate);
       endDate.setHours(endDate.getHours() + 1);
       
-      // Create description with assignment details
       const description = `Assignment Due: ${formatDate(assignment.dueDate)}
 Course: ${assignment.courseCode} - ${assignment.courseTitle}
 Faculty: ${assignment.facultyName || 'Not specified'}`;
@@ -90,12 +82,11 @@ Faculty: ${assignment.facultyName || 'Not specified'}`;
       };
     });
     
-    // Use the method to add all events to Google Calendar at once
     const success = NotificationService.addMultipleEventsToCalendar(calendarEvents);
     
     if (success) {
       toast.success(`Adding ${calendarEvents.length} assignments to Google Calendar`, {
-        description: "A new browser tab has opened to help you add these assignments"
+        description: "Adding assignments to your calendar. Please follow the instructions in the new tab."
       });
     } else {
       toast.error('Failed to create calendar events. Please allow popups and try again.');
@@ -108,10 +99,8 @@ Faculty: ${assignment.facultyName || 'Not specified'}`;
       return;
     }
 
-    // Create CSV header
     let csv = 'Course Code,Course Title,Due Date,Days Left,Faculty Name\n';
     
-    // Add each assignment as a row
     assignments.forEach(assignment => {
       const dueDate = assignment.dueDate ? formatDate(assignment.dueDate) : 'No deadline';
       const daysLeft = assignment.daysLeft !== null ? assignment.daysLeft : 'N/A';
@@ -119,7 +108,6 @@ Faculty: ${assignment.facultyName || 'Not specified'}`;
       csv += `"${assignment.courseCode}","${assignment.courseTitle}","${dueDate}","${daysLeft}","${assignment.facultyName}"\n`;
     });
     
-    // Create download link
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
