@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Assignment } from '@/lib/types';
 import { Header } from '@/components/Header';
@@ -6,7 +7,7 @@ import { AssignmentDashboard } from '@/components/AssignmentDashboard';
 import { Toaster } from '@/components/ui/sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Image, Info, CalendarDays, BookOpen, Clock } from 'lucide-react';
+import { Image, Info, CalendarDays, BookOpen, Clock, Table } from 'lucide-react';
 
 const STORAGE_KEY = 'vit_assignments';
 
@@ -82,16 +83,20 @@ const Index = () => {
                   <div className="p-4 bg-blue-50 border-b border-blue-100">
                     <div className="flex items-start text-sm text-blue-800">
                       <Info className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-                      <p>Copy the assignment table from your VIT student portal and paste it here to track your assignments and deadlines.</p>
+                      <p>Copy the assignment table from your VIT student portal and paste it below. The tool will automatically extract all deadlines and help you track them.</p>
                     </div>
                   </div>
                   <div className="p-6 text-sm">
-                    <p className="font-medium mb-2">Expected format:</p>
-                    <p className="mb-1">• Course code and title (e.g., CSE1001 - Introduction to Programming)</p>
-                    <p className="mb-1">• Faculty name</p>
-                    <p className="mb-1">• Due dates in format DD-MMM-YYYY (e.g., 15-APR-2023)</p>
-                    <p className="mb-1">• Class numbers</p>
-                    <p className="italic text-muted-foreground mt-3">Note: The assignment parser will extract all relevant information automatically.</p>
+                    <div className="font-medium mb-2 flex items-center gap-2">
+                      <Table className="h-4 w-4" />
+                      <span>Expected table format:</span>
+                    </div>
+                    <ul className="space-y-1 pl-6 list-disc">
+                      <li>Contains columns for Sl.No, Class Nbr, Course Code, Course Title, Upcoming Dues</li>
+                      <li>Dates are in format DD-MMM-YYYY (like 15-MAR-2025)</li>
+                      <li>May include days left in parentheses (like "15-MAR-2025 (10 days left)")</li>
+                    </ul>
+                    <p className="italic text-muted-foreground mt-3">Click "Show example format" in the form below to see a sample of the expected table format.</p>
                   </div>
                 </CardContent>
               </Card>
