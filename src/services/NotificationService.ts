@@ -1,6 +1,6 @@
 
-import { LocalNotifications } from '@capacitor/core';
 import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 
 export class NotificationService {
   static isAvailable(): boolean {
