@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Assignment } from '@/lib/types';
 import { AssignmentCard } from './AssignmentCard';
@@ -86,10 +87,12 @@ Faculty: ${assignment.facultyName || 'Not specified'}`;
     
     if (success) {
       toast.success(`Adding ${calendarEvents.length} assignments to Google Calendar`, {
-        description: "Adding assignments to your calendar. Please follow the instructions in the new tab."
+        description: "Follow the instructions in the new tab. If no tab opened, please allow popups for this site and try again."
       });
     } else {
-      toast.error('Failed to create calendar events. Please allow popups and try again.');
+      toast.error('Failed to create calendar events. Please allow popups for this site and try again.', {
+        description: "Your browser is blocking popups. Look for popup blocked notification in your browser's address bar."
+      });
     }
   };
 
