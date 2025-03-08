@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { NotificationService } from '@/services/NotificationService';
 import { formatDate } from '@/utils/dateUtils';
 import { Calendar, Download, Filter, SortAsc } from 'lucide-react';
+import { CalendarEvent } from '@/utils/googleCalendarApi';
 
 interface AssignmentDashboardProps {
   assignments: Assignment[];
@@ -63,8 +64,9 @@ export function AssignmentDashboard({ assignments: initialAssignments, onReset }
       return;
     }
     
-    const calendarEvents = assignmentsWithDueDate.map(assignment => {
+    const calendarEvents: CalendarEvent[] = assignmentsWithDueDate.map(assignment => {
       const startDate = new Date(assignment.dueDate instanceof Date ? assignment.dueDate : new Date(assignment.dueDate));
+      // Set reminder for 1 day before the due date at 9 AM
       startDate.setDate(startDate.getDate() - 1);
       startDate.setHours(9, 0, 0, 0);
       
@@ -79,7 +81,8 @@ Faculty: ${assignment.facultyName || 'Not specified'}`;
         title: `Assignment Reminder: ${assignment.courseTitle}`,
         description,
         startDate,
-        endDate
+        endDate,
+        colorId: '9' // Blue color
       };
     });
     
@@ -87,11 +90,11 @@ Faculty: ${assignment.facultyName || 'Not specified'}`;
     
     if (success) {
       toast.success(`Adding ${calendarEvents.length} assignments to Google Calendar`, {
-        description: "Follow the instructions in the new tab. If no tab opened, please allow popups for this site and try again."
+        description: "Follow the instructions in the new tab. If no tab opened, please allow popups and try again."
       });
     } else {
-      toast.error('Failed to create calendar events. Please allow popups for this site and try again.', {
-        description: "Your browser is blocking popups. Look for popup blocked notification in your browser's address bar."
+      toast.error('Failed to create calendar events', {
+        description: "Please check your browser's popup settings and try again. Look for popup blocked notification in your browser's address bar."
       });
     }
   };
