@@ -90,15 +90,15 @@ Faculty: ${assignment.facultyName || 'Not specified'}`;
       };
     });
     
-    // Use the new method to add all events to calendar at once
+    // Use the method to add all events to Google Calendar at once
     const success = NotificationService.addMultipleEventsToCalendar(calendarEvents);
     
     if (success) {
-      toast.success(`Added ${calendarEvents.length} assignments to calendar`, {
-        description: "Check your downloads for the .ics file that you can import to any calendar app"
+      toast.success(`Adding ${calendarEvents.length} assignments to Google Calendar`, {
+        description: "A new browser tab has opened to help you add these assignments"
       });
     } else {
-      toast.error('Failed to create calendar events. Please try again.');
+      toast.error('Failed to create calendar events. Please allow popups and try again.');
     }
   };
 

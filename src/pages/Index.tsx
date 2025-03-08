@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Assignment } from '@/lib/types';
 import { Header } from '@/components/Header';
@@ -16,14 +15,11 @@ const Index = () => {
   const [showParser, setShowParser] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Load assignments from localStorage on init
   useEffect(() => {
     try {
       const savedAssignments = localStorage.getItem(STORAGE_KEY);
       if (savedAssignments && JSON.parse(savedAssignments).length > 0) {
-        // Process the saved assignments to ensure dates are properly converted
         const parsedAssignments = JSON.parse(savedAssignments, (key, value) => {
-          // Check if the value looks like an ISO date string
           if (typeof value === 'string' && 
               /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.*Z$/.test(value)) {
             return new Date(value);
@@ -36,13 +32,11 @@ const Index = () => {
       }
     } catch (error) {
       console.error('Error loading assignments:', error);
-      // If there's an error loading, we'll show the parser
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  // Save assignments whenever they change
   useEffect(() => {
     if (assignments.length > 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(assignments));
@@ -53,7 +47,6 @@ const Index = () => {
     setAssignments(parsedAssignments);
     setShowParser(false);
     
-    // Save to localStorage
     localStorage.setItem(STORAGE_KEY, JSON.stringify(parsedAssignments));
   };
 
@@ -61,7 +54,6 @@ const Index = () => {
     setAssignments([]);
     setShowParser(true);
     
-    // Clear from localStorage
     localStorage.removeItem(STORAGE_KEY);
   };
 
@@ -87,26 +79,19 @@ const Index = () => {
             <div className="mb-10 max-w-3xl mx-auto">
               <Card className="overflow-hidden bg-white shadow-md border-0">
                 <CardContent className="p-0">
-                  <div className="relative">
-                    <img 
-                      src="/lovable-uploads/4e30b59d-6e9f-4ac1-afcf-34621c03c8d3.png" 
-                      alt="Assignment Reference" 
-                      className="w-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end">
-                      <div className="p-4 text-white w-full">
-                        <h3 className="text-lg font-semibold mb-1 flex items-center">
-                          <Image className="h-5 w-5 mr-2" />
-                          Assignment Table Reference
-                        </h3>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="p-4 bg-blue-50 border-t border-blue-100">
+                  <div className="p-4 bg-blue-50 border-b border-blue-100">
                     <div className="flex items-start text-sm text-blue-800">
                       <Info className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-                      <p>Copy the content like in the screenshot and paste it here in the webpage to track your assignments and deadlines.</p>
+                      <p>Copy the assignment table from your VIT student portal and paste it here to track your assignments and deadlines.</p>
                     </div>
+                  </div>
+                  <div className="p-6 text-sm">
+                    <p className="font-medium mb-2">Expected format:</p>
+                    <p className="mb-1">• Course code and title (e.g., CSE1001 - Introduction to Programming)</p>
+                    <p className="mb-1">• Faculty name</p>
+                    <p className="mb-1">• Due dates in format DD-MMM-YYYY (e.g., 15-APR-2023)</p>
+                    <p className="mb-1">• Class numbers</p>
+                    <p className="italic text-muted-foreground mt-3">Note: The assignment parser will extract all relevant information automatically.</p>
                   </div>
                 </CardContent>
               </Card>
@@ -127,7 +112,7 @@ const Index = () => {
                   <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mb-4">
                     <CalendarDays className="h-6 w-6 text-blue-500" />
                   </div>
-                  <h3 className="font-medium text-lg mb-2">Calendar Integration</h3>
+                  <h3 className="font-medium text-lg mb-2">Google Calendar Integration</h3>
                   <p className="text-sm text-muted-foreground">Add all your assignments to Google Calendar with a single click</p>
                 </div>
                 

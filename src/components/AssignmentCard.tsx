@@ -46,19 +46,17 @@ export function AssignmentCard({ assignment, className, style }: AssignmentCardP
 Course: ${assignment.courseCode} - ${assignment.courseTitle}
 Faculty: ${assignment.facultyName || 'Not specified'}`;
     
-    // Create a single assignment ICS file and download it
-    const calendarEvents = [{
-      title: `Assignment Reminder: ${assignment.courseTitle}`,
+    // Add directly to Google Calendar
+    const success = NotificationService.addEventToGoogleCalendar(
+      `Assignment Reminder: ${assignment.courseTitle}`,
       description,
       startDate,
       endDate
-    }];
-    
-    const success = NotificationService.addMultipleEventsToCalendar(calendarEvents);
+    );
     
     if (success) {
-      toast.success(`Added ${assignment.courseTitle} to calendar`, {
-        description: "Check your downloads for the .ics file that you can import to any calendar app"
+      toast.success(`Adding ${assignment.courseTitle} to Google Calendar`, {
+        description: "A new browser tab has opened to add this to your calendar"
       });
     } else {
       toast.error('Failed to add reminder to calendar');
