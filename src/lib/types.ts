@@ -10,7 +10,24 @@ export interface Assignment {
   daysLeft: number | null;
   courseType: string;
   facultyName: string;
-  dashboard?: string;
+  dashboard: string;
+  isCompleted?: boolean;
 }
 
 export type AssignmentStatus = 'upcoming' | 'overdue' | 'completed' | 'none';
+
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  photoURL?: string;
+}
+
+export interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
+  signUp: (email: string, password: string, name?: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
+}

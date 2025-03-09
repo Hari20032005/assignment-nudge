@@ -1,58 +1,142 @@
 
-import { format, parse, addDays, differenceInDays } from 'date-fns';
+import { format, addDays, isValid, parse, differenceInCalendarDays } from 'date-fns';
+import { AssignmentStatus } from '@/lib/types';
 
-// Parse a date string in the format DD-MMM-YYYY or with days left in parentheses
+/**
+ * Parses a date string in various formats
+ */
 export function parseDate(dateString: string): Date | null {
-  if (!dateString || dateString === '-' || dateString.toLowerCase().includes('nothing left')) {
-    return null;
+  if (!dateString) return null;
+  
+  // Trim any extra whitespace
+  dateString = dateString.trim();
+  
+  // Try various date formats
+  const formats = [
+    'dd-MMM-yyyy',
+    'MM/dd/yyyy',
+    'yyyy-MM-dd',
+    'dd/MM/yyyy',
+    'MMM dd, yyyy',
+    'dd MMM yyyy',
+  ];
+  
+  for (const formatStr of formats) {
+    const parsedDate = parse(dateString, formatStr, new Date());
+    if (isValid(parsedDate)) {
+      return parsedDate;
+    }
   }
   
-  try {
-    // Extract just the date part if there's additional text
-    const dateMatch = dateString.match(/(\d{2}-[A-Za-z]{3}-\d{4})/);
-    if (dateMatch) {
-      const cleanDate = dateMatch[1];
-      return parse(cleanDate, 'dd-MMM-yyyy', new Date());
-    }
+  // Try extracting date with regex for more flexible parsing
+  const dateRegex = /(\d{1,2})[-\/](\w{3,})[-\/](\d{4})/;
+  const match = dateString.match(dateRegex);
+  
+  if (match) {
+    const [_, day, month, year] = match;
+    const monthMap: {[key: string]: number} = {
+      'jan': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'may': 4, 'jun': 5,
+      'jul': 6, 'aug': 7, 'sep': 8, 'oct': 9, 'nov': 10, 'dec': 11
+    };
     
-    // If the date is not in the expected format, try to handle other cases
-    console.log('Date string could not be parsed:', dateString);
-    return null;
-  } catch (e) {
-    console.error('Error parsing date:', e);
-    return null;
+    const monthLower = month.toLowerCase();
+    if (monthMap[monthLower] !== undefined) {
+      const parsedDate = new Date(
+        parseInt(year),
+        monthMap[monthLower],
+        parseInt(day)
+      );
+      
+      if (isValid(parsedDate)) {
+        return parsedDate;
+      }
+    }
   }
+  
+  console.warn(`Could not parse date: ${dateString}`);
+  return null;
 }
 
-// Calculate days left until due date
+/**
+ * Calculates the days left until the due date
+ */
 export function calculateDaysLeft(dueDate: Date | null): number | null {
   if (!dueDate) return null;
   
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  return differenceInDays(dueDate, today);
+  const dueDateCopy = new Date(dueDate);
+  dueDateCopy.setHours(0, 0, 0, 0);
+  
+  return differenceInCalendarDays(dueDateCopy, today);
 }
 
-// Format date for display
+/**
+ * Formats a date as a string
+ */
 export function formatDate(date: Date | null): string {
-  if (!date) return 'No due date';
+  if (!date) return 'No date';
   return format(date, 'dd MMM yyyy');
 }
 
-// Get a nice relative time string
+/**
+ * Gets a human-readable string for the time remaining
+ */
 export function getRelativeTimeString(daysLeft: number | null): string {
   if (daysLeft === null) return 'No deadline';
-  if (daysLeft < 0) return `Overdue by ${Math.abs(daysLeft)} day${Math.abs(daysLeft) !== 1 ? 's' : ''}`;
+  
+  if (daysLeft < 0) {
+    const abs = Math.abs(daysLeft);
+    return abs === 1 ? 'Overdue by 1 day' : `Overdue by ${abs} days`;
+  }
+  
   if (daysLeft === 0) return 'Due today';
   if (daysLeft === 1) return 'Due tomorrow';
-  return `${daysLeft} days left`;
+  if (daysLeft < 7) return `Due in ${daysLeft} days`;
+  if (daysLeft < 14) return 'Due in 1 week';
+  if (daysLeft < 30) return `Due in ${Math.floor(daysLeft / 7)} weeks`;
+  
+  return `Due in ${Math.floor(daysLeft / 30)} months`;
 }
 
-// Determine status based on days left
-export function getAssignmentStatus(daysLeft: number | null): 'upcoming' | 'overdue' | 'completed' | 'none' {
-  if (daysLeft === null) return 'none';
+/**
+ * Determines the assignment status based on days left
+ */
+export function getAssignmentStatus(daysLeft: number): AssignmentStatus {
   if (daysLeft < 0) return 'overdue';
-  if (daysLeft <= 7) return 'upcoming';
   return 'upcoming';
+}
+
+/**
+ * Gets the next N days as formatted date strings
+ */
+export function getNextNDays(n: number): string[] {
+  const dates: string[] = [];
+  let currentDate = new Date();
+  
+  for (let i = 0; i < n; i++) {
+    dates.push(format(currentDate, 'dd MMM yyyy'));
+    currentDate = addDays(currentDate, 1);
+  }
+  
+  return dates;
+}
+
+/**
+ * Sorts assignments by due date
+ */
+export function sortByDueDate(assignments: any[], ascending: boolean = true): any[] {
+  return [...assignments].sort((a, b) => {
+    if (a.dueDate === null && b.dueDate === null) return 0;
+    if (a.dueDate === null) return 1;
+    if (b.dueDate === null) return -1;
+    
+    const dateA = a.dueDate instanceof Date ? a.dueDate : new Date(a.dueDate);
+    const dateB = b.dueDate instanceof Date ? b.dueDate : new Date(b.dueDate);
+    
+    return ascending 
+      ? dateA.getTime() - dateB.getTime()
+      : dateB.getTime() - dateA.getTime();
+  });
 }
