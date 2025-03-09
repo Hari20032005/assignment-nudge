@@ -104,9 +104,13 @@ export function AssignmentParser({ onAssignmentsParsed }: AssignmentParserProps)
         {showExample && (
           <div className="border rounded-md overflow-hidden">
             <img 
-              src="/lovable-uploads/98903f0b-f7c0-49c2-a1a0-0c5b5ec7ed40.png" 
+              src="/lovable-uploads/f3b838da-4f6a-4cdf-b319-35f056134a97.png" 
               alt="Assignment table example" 
-              className="w-full h-auto" 
+              className="w-full h-auto"
+              onError={(e) => {
+                // Fallback to static image if the uploaded one fails
+                e.currentTarget.src = "/lovable-uploads/f3b838da-4f6a-4cdf-b319-35f056134a97.png";
+              }}
             />
             <div className="p-2 bg-gray-50 text-xs text-muted-foreground">
               Example of VIT assignment table format from ViBoot extension

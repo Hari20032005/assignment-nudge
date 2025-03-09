@@ -83,13 +83,24 @@ const Index = () => {
                   <div className="p-4 bg-blue-50 border-b border-blue-100">
                     <div className="flex items-start text-sm text-blue-800">
                       <Info className="h-5 w-5 mr-2 flex-shrink-0 mt-0.5" />
-                      <p>Copy the assignment table from your VIT student portal and paste it below. The tool will automatically extract all deadlines and help you track them.</p>
+                      <p>Copy the assignment table from your VIT student portal using the ViBoot extension and paste it below. The tool will automatically extract all deadlines and help you track them.</p>
                     </div>
                   </div>
                   <div className="p-6 text-sm">
                     <div className="font-medium mb-2 flex items-center gap-2">
                       <Table className="h-4 w-4" />
                       <span>Expected table format:</span>
+                    </div>
+                    <div className="mb-4 border rounded overflow-hidden">
+                      <img 
+                        src="/lovable-uploads/f3b838da-4f6a-4cdf-b319-35f056134a97.png" 
+                        alt="VIT Assignment Table Example" 
+                        className="w-full h-auto object-cover"
+                        onError={(e) => {
+                          // Fallback if image is not found
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
                     </div>
                     <ul className="space-y-1 pl-6 list-disc">
                       <li>Contains columns for Sl.No, Class Nbr, Course Code, Course Title, Upcoming Dues</li>
@@ -106,7 +117,7 @@ const Index = () => {
               <div className="max-w-lg text-center mb-10">
                 <h1 className="text-3xl font-bold mb-4 tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">Track Your VIT Assignments</h1>
                 <p className="text-muted-foreground">
-                  Paste your assignment data below and we'll help you stay on top of your deadlines with Google Calendar integration.
+                  Paste your assignment data below and we'll help you stay on top of your deadlines with Google Calendar integration and ICS file exports.
                 </p>
               </div>
               
@@ -117,8 +128,8 @@ const Index = () => {
                   <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center mb-4">
                     <CalendarDays className="h-6 w-6 text-blue-500" />
                   </div>
-                  <h3 className="font-medium text-lg mb-2">Google Calendar Integration</h3>
-                  <p className="text-sm text-muted-foreground">Add all your assignments to Google Calendar with a single click</p>
+                  <h3 className="font-medium text-lg mb-2">Calendar Integration</h3>
+                  <p className="text-sm text-muted-foreground">Add all your assignments to Google Calendar or export ICS files for any calendar app</p>
                 </div>
                 
                 <div className="flex flex-col items-center text-center p-6 bg-white rounded-xl shadow-sm">
