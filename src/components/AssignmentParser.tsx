@@ -15,7 +15,6 @@ interface AssignmentParserProps {
 export function AssignmentParser({ onAssignmentsParsed }: AssignmentParserProps) {
   const [inputText, setInputText] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [showExample, setShowExample] = useState<boolean>(false);
 
   const parseAssignments = () => {
     if (!inputText.trim()) {
@@ -90,33 +89,8 @@ export function AssignmentParser({ onAssignmentsParsed }: AssignmentParserProps)
           <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
           <div>
             <p><strong>Make sure you're using the ViBoot extension</strong> to access your VIT Student Portal. Copy data from your assignment table and paste it below.</p>
-            <Button 
-              variant="link" 
-              size="sm" 
-              className="p-0 h-auto text-blue-600" 
-              onClick={() => setShowExample(!showExample)}
-            >
-              {showExample ? "Hide example" : "Show example format"}
-            </Button>
           </div>
         </div>
-
-        {showExample && (
-          <div className="border rounded-md overflow-hidden">
-            <img 
-              src="/lovable-uploads/f3b838da-4f6a-4cdf-b319-35f056134a97.png" 
-              alt="Assignment table example" 
-              className="w-full h-auto"
-              onError={(e) => {
-                // Fallback to static image if the uploaded one fails
-                e.currentTarget.src = "/lovable-uploads/f3b838da-4f6a-4cdf-b319-35f056134a97.png";
-              }}
-            />
-            <div className="p-2 bg-gray-50 text-xs text-muted-foreground">
-              Example of VIT assignment table format from ViBoot extension
-            </div>
-          </div>
-        )}
 
         <Textarea
           placeholder="Paste your assignment data here from ViBoot extension..."
