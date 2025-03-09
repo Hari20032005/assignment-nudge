@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,32 +25,24 @@ export function AssignmentParser({ onAssignmentsParsed }: AssignmentParserProps)
     setIsLoading(true);
 
     try {
-      // Split the input text into lines
       const lines = inputText.trim().split('\n');
       
-      // Process each line
       const assignments: Assignment[] = [];
       
-      // Skip the header row if it exists
       const startIndex = lines[0].includes('Sl.No') || lines[0].includes('SI.No') ? 1 : 0;
       
       for (let i = startIndex; i < lines.length; i++) {
         const line = lines[i].trim();
         
-        // Skip empty lines
         if (!line) continue;
         
-        // Split the line by tabs or multiple spaces
         const parts = line.split(/\t|  +/).filter(part => part.trim() !== '');
         
         console.log('Parsed line parts:', parts);
         
-        // Check if this looks like a valid assignment row (starts with a number)
         if (parts.length >= 5 && /^\d+$/.test(parts[0].trim())) {
-          // Extract the date from the 'Upcoming Dues' column
           let upcomingDues = parts[4];
           
-          // Get only the date part if it contains more information like days left
           const dueDate = parseDate(upcomingDues);
           const daysLeft = calculateDaysLeft(dueDate);
           
@@ -112,7 +103,7 @@ export function AssignmentParser({ onAssignmentsParsed }: AssignmentParserProps)
         {showExample && (
           <div className="border rounded-md overflow-hidden">
             <img 
-              src="/lovable-uploads/7805c2a5-b494-45b1-9e82-925e2dc781b4.png" 
+              src="/lovable-uploads/98903f0b-f7c0-49c2-a1a0-0c5b5ec7ed40.png" 
               alt="Assignment table example" 
               className="w-full h-auto" 
             />

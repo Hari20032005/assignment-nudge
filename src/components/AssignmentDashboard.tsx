@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Assignment } from '@/lib/types';
 import { AssignmentCard } from './AssignmentCard';
@@ -8,8 +7,14 @@ import { AssignmentParser } from './AssignmentParser';
 import { toast } from 'sonner';
 import { NotificationService } from '@/services/NotificationService';
 import { formatDate } from '@/utils/dateUtils';
-import { Calendar, Download, Filter, SortAsc } from 'lucide-react';
+import { Calendar, Download, Filter, SortAsc, FileDown } from 'lucide-react';
 import { CalendarEvent } from '@/utils/googleCalendarApi';
+import { generateMultipleIcsContent, downloadIcsFile } from '@/utils/icsUtils';
+import { 
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 interface AssignmentDashboardProps {
   assignments: Assignment[];
@@ -66,7 +71,6 @@ export function AssignmentDashboard({ assignments: initialAssignments, onReset }
     
     const calendarEvents: CalendarEvent[] = assignmentsWithDueDate.map(assignment => {
       const startDate = new Date(assignment.dueDate instanceof Date ? assignment.dueDate : new Date(assignment.dueDate));
-      // Set reminder for 1 day before the due date at 9 AM
       startDate.setDate(startDate.getDate() - 1);
       startDate.setHours(9, 0, 0, 0);
       
@@ -82,7 +86,7 @@ Faculty: ${assignment.facultyName || 'Not specified'}`;
         description,
         startDate,
         endDate,
-        colorId: '9' // Blue color
+        colorId: '9'
       };
     });
     
@@ -127,6 +131,22 @@ Faculty: ${assignment.facultyName || 'Not specified'}`;
     toast.success('Assignments exported successfully');
   };
 
+  const downloadIcsCalendar = () => {
+    const assignmentsWithDueDate = assignments.filter(a => a.dueDate !== null);
+    
+    if (assignmentsWithDueDate.length === 0) {
+      toast.error('No assignments with due dates to download');
+      return;
+    }
+    
+    const icsContent = generateMultipleIcsContent(assignmentsWithDueDate);
+    downloadIcsFile(icsContent, 'vit_assignments.ics');
+    
+    toast.success(`Downloaded ${assignmentsWithDueDate.length} assignments as ICS file`, {
+      description: "Import this file into your calendar application (Google Calendar, Outlook, Apple Calendar, etc.)"
+    });
+  };
+
   return (
     <div className="w-full max-w-5xl mx-auto transition-all duration-300 animate-fade-in">
       {showAddMore ? (
@@ -154,14 +174,47 @@ Faculty: ${assignment.facultyName || 'Not specified'}`;
             >
               Add More
             </Button>
-            <Button
-              variant="default"
-              onClick={addAllToCalendar}
-              className="focus-ring gap-2"
-            >
-              <Calendar className="h-4 w-4" />
-              Add All to Calendar
-            </Button>
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="default"
+                  className="focus-ring gap-2"
+                >
+                  <Calendar className="h-4 w-4" />
+                  Add to Calendar
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-4" align="end">
+                <div className="flex flex-col gap-2">
+                  <p className="text-sm font-medium mb-2">Choose export method</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={addAllToCalendar}
+                    className="justify-start gap-2"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Google Calendar
+                  </Button>
+                  
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={downloadIcsCalendar}
+                    className="justify-start gap-2"
+                  >
+                    <FileDown className="h-4 w-4" />
+                    Download ICS File
+                  </Button>
+                  
+                  <p className="text-xs text-muted-foreground mt-2">
+                    ICS files can be imported into any calendar app including Google Calendar, Outlook, and Apple Calendar.
+                  </p>
+                </div>
+              </PopoverContent>
+            </Popover>
+            
             <Button 
               variant="outline"
               onClick={exportAssignmentsAsCSV}
