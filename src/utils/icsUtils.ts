@@ -139,4 +139,3 @@ export function downloadIcsFile(content: string, filename: string = "assignments
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
-

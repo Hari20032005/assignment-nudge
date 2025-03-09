@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -88,7 +89,7 @@ export function AssignmentParser({ onAssignmentsParsed }: AssignmentParserProps)
         <div className="flex items-start space-x-2 p-3 bg-blue-50 rounded-md text-blue-800 text-sm">
           <Info className="h-5 w-5 flex-shrink-0 mt-0.5" />
           <div>
-            <p>Copy data from your VIT Student Portal assignment table and paste it below.</p>
+            <p><strong>Make sure you're using the ViBoot extension</strong> to access your VIT Student Portal. Copy data from your assignment table and paste it below.</p>
             <Button 
               variant="link" 
               size="sm" 
@@ -108,13 +109,13 @@ export function AssignmentParser({ onAssignmentsParsed }: AssignmentParserProps)
               className="w-full h-auto" 
             />
             <div className="p-2 bg-gray-50 text-xs text-muted-foreground">
-              Example of VIT assignment table format
+              Example of VIT assignment table format from ViBoot extension
             </div>
           </div>
         )}
 
         <Textarea
-          placeholder="Paste your assignment data here..."
+          placeholder="Paste your assignment data here from ViBoot extension..."
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           className="min-h-[200px] font-mono text-sm focus-ring"
